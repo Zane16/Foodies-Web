@@ -1,0 +1,52 @@
+import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
+
+// Use service role to bypass RLS
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const { organization, email, document_urls, full_name } = body
+
+    // Insert into the unified applications table with role='admin'
+    const { data, error } = await supabaseAdmin
+      .from('applications')
+      .insert([
+        {
+          user_id: null,  // Will be set after approval
+          full_name: full_name || organization, // Use org name if no full_name provided
+          email,
+          role: 'admin',
+          status: 'pending',
+          organization,
+          document_urls: document_urls || []
+        }
+      ])
+      .select()
+
+    if (error) {
+      console.error('Insert error:', error)
+      throw error
+    }
+
+    console.log(`📝 Admin application submitted: ${email} (${organization})`);
+
+    return NextResponse.json({ success: true, data })
+  } catch (error: any) {
+    console.error('API Error:', error)
+    return NextResponse.json(
+      { error: error.message || 'Failed to submit application' },
+      { status: 400 }
+    )
+  }
+}

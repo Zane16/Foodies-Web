@@ -11,8 +11,12 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface Vendor {
   id: string
-  name: string
+  full_name: string
   email: string
+  business_name: string
+  total_items: number
+  available_items: number
+  is_active: boolean
 }
 
 interface Application {
@@ -63,13 +67,8 @@ export default function AdminDashboard() {
           }
         })
 
-        setVendors(
-          (await vendorsRes.json()).map((v: any) => ({
-            id: v.id,
-            name: v.name,
-            email: v.email
-          }))
-        )
+        const vendorsData = await vendorsRes.json()
+        setVendors(vendorsData)
       } catch (error) {
         console.error("Failed to fetch data:", error)
       } finally {
@@ -325,16 +324,29 @@ export default function AdminDashboard() {
                 {vendors.map((vendor) => (
                   <Card key={vendor.id}>
                     <CardHeader>
-                      <CardTitle>{vendor.name}</CardTitle>
-                      <CardDescription>{vendor.email}</CardDescription>
+                      <CardTitle>{vendor.business_name}</CardTitle>
+                      <CardDescription className="space-y-1">
+                        <div>{vendor.full_name}</div>
+                        <div className="text-xs">{vendor.email}</div>
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <Button 
-                        variant="destructive" 
+                    <CardContent className="space-y-3">
+                      <div className="text-sm space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Menu Items:</span>
+                          <span className="font-medium">{vendor.available_items} / {vendor.total_items}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          ({vendor.available_items} available)
+                        </div>
+                      </div>
+                      <Button
+                        variant="destructive"
                         size="sm"
+                        className="w-full"
                         onClick={() => handleRemoveVendor(vendor.id)}
                       >
-                        Remove
+                        Deactivate Vendor
                       </Button>
                     </CardContent>
                   </Card>
@@ -347,8 +359,8 @@ export default function AdminDashboard() {
 
       {/* Review Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[85vh] p-0 gap-0 flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b sticky top-0 bg-background z-10">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="pb-4 border-b">
             <DialogTitle className="flex items-center justify-between">
               <span>Application Review</span>
               <Badge variant={selectedApp?.role === 'vendor' ? 'default' : 'secondary'}>
@@ -359,8 +371,8 @@ export default function AdminDashboard() {
               Review all details before approving or declining this application
             </DialogDescription>
           </DialogHeader>
-          
-          <ScrollArea className="flex-1 px-6 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 180px)' }}>
+
+          <ScrollArea className="flex-1 overflow-y-auto pr-4">
             {selectedApp && (
               <div className="space-y-6 py-4">
                 {/* Personal Information */}
@@ -499,25 +511,25 @@ export default function AdminDashboard() {
             )}
           </ScrollArea>
 
-          {/* Action Buttons - Sticky Footer */}
-          <div className="flex gap-3 px-6 py-4 border-t bg-background sticky bottom-0">
-            <Button 
-              variant="outline" 
+          {/* Action Buttons Footer */}
+          <div className="flex items-center gap-3 pt-4 border-t mt-4">
+            <Button
+              variant="outline"
               className="flex-1"
               onClick={() => setIsModalOpen(false)}
               disabled={loadingId === selectedApp?.id}
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               className="flex-1"
               onClick={() => selectedApp && handleDecline(selectedApp.id)}
               disabled={loadingId === selectedApp?.id}
             >
               {loadingId === selectedApp?.id ? "Declining..." : "Decline"}
             </Button>
-            <Button 
+            <Button
               className="flex-1 bg-green-600 hover:bg-green-700"
               onClick={() => selectedApp && handleApprove(selectedApp.id)}
               disabled={loadingId === selectedApp?.id}

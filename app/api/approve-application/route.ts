@@ -28,37 +28,102 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Application not found" }, { status: 404 });
     }
 
-    // ✅ Create random password (for testing)
-    const randomPassword = Math.random().toString(36).slice(-8);
+    // Create random password (for testing/development)
+    const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
 
-    // ✅ Create the user directly (no email invite)
+    let userId: string;
+    let isNewUser = false;
+
+    // Try to create the auth user
     const { data: userData, error: userErr } = await supabaseAdmin.auth.admin.createUser({
       email: application.email,
       password: randomPassword,
       email_confirm: true,
     });
 
-    if (userErr || !userData?.user) {
-      console.error("User creation error:", userErr);
+    if (userErr) {
+      // Check if user already exists
+      if (userErr.message?.includes('email_exists') || userErr.code === 'email_exists') {
+        console.log(`User already exists for ${application.email}, fetching existing user...`);
+
+        // Get existing user by email
+        const { data: { users }, error: listErr } = await supabaseAdmin.auth.admin.listUsers();
+
+        if (listErr) {
+          console.error("Error listing users:", listErr);
+          return NextResponse.json({ error: "Failed to verify existing user" }, { status: 500 });
+        }
+
+        const existingUser = users?.find(u => u.email === application.email);
+
+        if (!existingUser) {
+          console.error("User exists but could not be found:", userErr);
+          return NextResponse.json({ error: "User exists but could not be verified" }, { status: 500 });
+        }
+
+        userId = existingUser.id;
+        console.log(`Found existing user: ${userId}`);
+      } else {
+        console.error("User creation error:", userErr);
+        return NextResponse.json({ error: "Failed to create user: " + userErr.message }, { status: 500 });
+      }
+    } else if (!userData?.user) {
+      console.error("User creation failed with no error");
       return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
+    } else {
+      userId = userData.user.id;
+      isNewUser = true;
+      console.log(`Created new user: ${userId}`);
     }
 
-    const userId = userData.user.id;
+    // Get current admin ID for audit trail
+    const { data: { user: currentUser } } = await supabaseAdmin.auth.getUser();
+    const reviewedBy = currentUser?.id || null;
 
-    // ✅ Update application status
-    await supabaseAdmin.from("applications").update({ status: "approved" }).eq("id", applicationId);
+    // Update application status with audit trail
+    await supabaseAdmin
+      .from("applications")
+      .update({
+        status: "approved",
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: reviewedBy
+      })
+      .eq("id", applicationId);
 
-    let newRecord: any = null;
+    // Create or update profile (for all roles)
+    const { error: profileErr } = await supabaseAdmin
+      .from("profiles")
+      .upsert([
+        {
+          id: userId,
+          role: application.role,
+          full_name: application.full_name,
+          email: application.email,
+          organization: application.organization || "global",
+          status: "approved", // Set status to approved
+        },
+      ], {
+        onConflict: 'id'
+      });
 
-    // ✅ Insert into vendors or profiles depending on role
+    if (profileErr) {
+      console.error("Profile creation error:", profileErr);
+      return NextResponse.json({ error: profileErr.message }, { status: 500 });
+    }
+
+    let additionalRecord: any = null;
+
+    // Create vendor-specific record if vendor role
     if (application.role === "vendor") {
       const { data: vendorData, error: vendorErr } = await supabaseAdmin
         .from("vendors")
         .insert([
           {
-            name: application.business_name || application.full_name,
-            auth_user_id: userId,
-            status: "approved",
+            id: userId, // FK to profiles
+            business_name: application.business_name || application.full_name,
+            business_address: application.business_address || null,
+            menu_summary: application.menu_summary || null,
+            is_active: true,
           },
         ])
         .select()
@@ -68,47 +133,22 @@ export async function POST(req: Request) {
         console.error("Vendor creation error:", vendorErr);
         return NextResponse.json({ error: vendorErr.message }, { status: 500 });
       }
-      newRecord = vendorData;
-
-      await supabaseAdmin.from("profiles").insert([
-        {
-          id: userId,
-          role: "vendor",
-          full_name: application.full_name,
-          organization: application.organization || null,
-          vendor_name: application.business_name || null,
-          status: "approved",
-        },
-      ]);
-    } else if (application.role === "deliverer") {
-      const { data: delivererData, error: delivererErr } = await supabaseAdmin
-        .from("profiles")
-        .insert([
-          {
-            id: userId,
-            role: "deliverer",
-            full_name: application.full_name,
-            organization: application.organization || null,
-            status: "approved",
-          },
-        ])
-        .select()
-        .single();
-
-      if (delivererErr) {
-        console.error("Deliverer creation error:", delivererErr);
-        return NextResponse.json({ error: delivererErr.message }, { status: 500 });
-      }
-      newRecord = delivererData;
+      additionalRecord = vendorData;
     }
 
-    console.log(`✅ Created user: ${application.email} | Password: ${randomPassword}`);
+    if (isNewUser) {
+      console.log(`✅ Created ${application.role}: ${application.email} | Password: ${randomPassword}`);
+    } else {
+      console.log(`✅ Updated existing user to ${application.role}: ${application.email}`);
+    }
 
-    // ✅ Return temp password for testing
     return NextResponse.json({
       success: true,
-      newRecord,
-      tempPassword: randomPassword, // <— Use this to log in manually for now
+      userId,
+      role: application.role,
+      additionalRecord,
+      tempPassword: isNewUser ? randomPassword : undefined, // Only return password for new users
+      isNewUser,
     });
 
   } catch (err) {

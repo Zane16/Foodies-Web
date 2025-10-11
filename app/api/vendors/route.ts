@@ -1,4 +1,4 @@
-// app/api/vendors/[id]/route.ts
+// app/api/vendors/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -7,28 +7,23 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+// GET all vendors using the vendor_summary view
+export async function GET() {
   try {
-    const vendorId = params.id;
-    if (!vendorId) {
-      return NextResponse.json({ error: "Missing vendorId" }, { status: 400 });
+    const { data, error } = await supabaseAdmin
+      .from("vendor_summary")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching vendors:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // 1. Downgrade the profile role back to "customer"
-    await supabaseAdmin
-      .from("profiles")
-      .update({ role: "customer", status: "pending" })
-      .eq("id", vendorId);
-
-    // 2. Optionally: also remove them from vendors table if you’re using it
-    await supabaseAdmin.from("vendors").delete().eq("auth_user_id", vendorId);
-
-    return NextResponse.json({ ok: true });
+    return NextResponse.json(data || []);
   } catch (err) {
-    console.error("DELETE vendor error:", err);
+    console.error("GET vendors error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
