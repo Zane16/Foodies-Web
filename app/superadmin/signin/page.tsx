@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Shield } from "lucide-react"
-import { supabase } from "@/../../supabaseClient"
+import { supabase } from "@/lib/supabase"
 
 export default function SuperAdminSignInPage() {
   const router = useRouter()
@@ -46,7 +46,7 @@ export default function SuperAdminSignInPage() {
       // 3️⃣ Redirect based on role
       switch (profile.role) {
         case "superadmin":
-          router.push("/SuperAdmin/dashboard")
+          router.push("/superadmin/dashboard")
           break
         case "admin":
           router.push("/admin/dashboard")

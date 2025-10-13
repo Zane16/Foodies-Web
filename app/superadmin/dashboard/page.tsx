@@ -1,23 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import SuperAdminLayout from "../../layouts/SuperAdminLayout"
+import SuperAdminLayout from "@/layouts/SuperAdminLayout"
 import ProtectedSuperAdminRoute from "./protectRoute"
-import { supabase } from "@/../../supabaseClient"
+import { supabase } from "@/lib/supabase"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Eye, FileText, Mail, Building2, Calendar } from "lucide-react"
-
-type AdminProfile = {
-  id: string
-  full_name: string | null
-  organization: string | null
-  status: string | null
-  created_at: string | null
-  email?: string | null
-}
+import { Eye, FileText, Mail, Building2, Calendar, School } from "lucide-react"
 
 type AdminApplication = {
   id: string
@@ -30,40 +21,41 @@ type AdminApplication = {
   created_at: string | null
 }
 
+type School = {
+  school_name: string
+  admin_email: string
+  admin_name: string
+  admin_id: string
+  status: string
+  date_created: string
+  admin_count: number
+  vendor_count: number
+  deliverer_count: number
+  all_admins: Array<{
+    id: string
+    full_name: string | null
+    email: string | null
+    status: string | null
+    created_at: string | null
+  }>
+}
+
 export default function Dashboard() {
-  const [admins, setAdmins] = useState<AdminProfile[]>([])
   const [applications, setApplications] = useState<AdminApplication[]>([])
-  const [loading, setLoading] = useState(true)
+  const [schools, setSchools] = useState<School[]>([])
   const [appLoading, setAppLoading] = useState(true)
+  const [schoolsLoading, setSchoolsLoading] = useState(true)
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [selectedApp, setSelectedApp] = useState<AdminApplication | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedSchool, setSelectedSchool] = useState<School | null>(null)
+  const [isSchoolModalOpen, setIsSchoolModalOpen] = useState(false)
 
   useEffect(() => {
-    fetchAdmins()
     fetchApplications()
+    fetchSchools()
   }, [])
-
-  // -------------------- Fetch Admins --------------------
-  async function fetchAdmins() {
-    setLoading(true)
-    setError(null)
-    try {
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, organization, status, created_at")
-        .eq("role", "admin")
-
-      if (profilesError) throw profilesError
-      setAdmins(profiles || [])
-    } catch (err: any) {
-      console.error("fetchAdmins error:", err)
-      setError(err.message || "Failed to load admins")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   // -------------------- Fetch Applications --------------------
   async function fetchApplications() {
@@ -84,40 +76,19 @@ export default function Dashboard() {
     }
   }
 
-  // -------------------- Admin Actions --------------------
-  async function updateStatus(adminId: string, nextStatus: "approved" | "declined") {
-    if (!confirm(`Are you sure you want to set status = "${nextStatus}" for this admin?`)) return
-    setActionLoadingId(adminId)
-    setError(null)
+  // -------------------- Fetch Schools --------------------
+  async function fetchSchools() {
+    setSchoolsLoading(true)
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ status: nextStatus })
-        .eq("id", adminId)
+      const response = await fetch('/api/schools')
+      if (!response.ok) throw new Error('Failed to fetch schools')
 
-      if (error) throw error
-      await fetchAdmins()
+      const result = await response.json()
+      setSchools(result.schools || [])
     } catch (err: any) {
-      console.error("updateStatus error:", err)
-      setError(err.message || "Failed to update status")
+      console.error("fetchSchools error:", err)
     } finally {
-      setActionLoadingId(null)
-    }
-  }
-
-  async function deleteAdmin(adminId: string) {
-    if (!confirm("This will delete the admin profile. This does NOT delete the auth user. Continue?")) return
-    setActionLoadingId(adminId)
-    setError(null)
-    try {
-      const { error } = await supabase.from("profiles").delete().eq("id", adminId)
-      if (error) throw error
-      await fetchAdmins()
-    } catch (err: any) {
-      console.error("deleteAdmin error:", err)
-      setError(err.message || "Failed to delete admin")
-    } finally {
-      setActionLoadingId(null)
+      setSchoolsLoading(false)
     }
   }
 
@@ -192,8 +163,82 @@ export default function Dashboard() {
     setIsModalOpen(true)
   }
 
+  const openSchoolModal = (school: School) => {
+    setSelectedSchool(school)
+    setIsSchoolModalOpen(true)
+  }
+
+  async function resetAdminPassword(adminId: string, adminEmail: string, adminName: string) {
+    if (!confirm(`Reset password for ${adminName} (${adminEmail})?\n\nA new password will be generated and displayed to you.`)) return
+
+    setActionLoadingId(adminId)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/reset-admin-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminId })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to reset password')
+      }
+
+      alert(`Password reset successful!\n\nEmail: ${result.email}\nNew Password: ${result.newPassword}\n\nPlease save this password and share it securely with the admin.`)
+    } catch (err: any) {
+      console.error("Reset password error:", err)
+      setError(err.message || "Failed to reset password")
+      alert(err.message)
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
+  async function deactivateSchool(schoolName: string) {
+    const confirmed = confirm(
+      `⚠️ DEACTIVATE SCHOOL: "${schoolName}"\n\n` +
+      `This action will:\n` +
+      `• Set ALL admin accounts to "declined" status\n` +
+      `• Prevent all admins from accessing the system\n` +
+      `• This action CANNOT be undone easily\n\n` +
+      `Are you absolutely sure you want to proceed?`
+    )
+
+    if (!confirmed) return
+
+    const school = schools.find(s => s.school_name === schoolName)
+    if (!school) return
+
+    setActionLoadingId(schoolName)
+    setError(null)
+
+    try {
+      // Update all admins for this school
+      for (const admin of school.all_admins) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ status: "declined" })
+          .eq("id", admin.id)
+
+        if (error) throw error
+      }
+
+      await fetchSchools()
+      alert(`All admins for "${schoolName}" have been deactivated.`)
+      setIsSchoolModalOpen(false) // Close the modal after deactivation
+    } catch (err: any) {
+      console.error("Deactivate school error:", err)
+      setError(err.message || "Failed to deactivate school")
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
   // -------------------- Render --------------------
-  if (loading || appLoading) {
+  if (appLoading || schoolsLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p className="text-lg text-gray-600">Loading dashboard…</p>
@@ -205,15 +250,18 @@ export default function Dashboard() {
     <ProtectedSuperAdminRoute>
       <SuperAdminLayout>
         <div className="p-6">
-          {/* ---------- Admins Table ---------- */}
+          {/* ---------- Schools Table ---------- */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-semibold">Manage Organizations (Admins)</h1>
-              <p className="mt-1 text-sm text-muted-foreground">View and manage all school admins</p>
+              <h1 className="text-2xl font-semibold flex items-center gap-2">
+                <School className="w-7 h-7" />
+                Schools Overview
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">View all registered schools and their admin contacts</p>
             </div>
             <div>
               <button
-                onClick={() => { fetchAdmins(); fetchApplications() }}
+                onClick={() => { fetchApplications(); fetchSchools() }}
                 className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
               >
                 Refresh
@@ -223,51 +271,53 @@ export default function Dashboard() {
 
           {error && <div className="mb-4 text-red-600">{error}</div>}
 
-          {admins.length === 0 ? (
-            <div className="py-6 text-gray-600">No organizations / admins found.</div>
+          {schools.length === 0 ? (
+            <div className="py-6 text-gray-600">No schools found.</div>
           ) : (
             <div className="overflow-x-auto bg-white rounded shadow mb-12">
               <table className="min-w-full divide-y">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Organization</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">School Name</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Admin Name</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Admin Email</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Created</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date Created</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Admins</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {admins.map((a) => (
-                    <tr key={a.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm">{a.full_name ?? "—"}</td>
-                      <td className="px-4 py-3 text-sm">{a.email ?? "—"}</td>
-                      <td className="px-4 py-3 text-sm">{a.organization ?? "—"}</td>
-                      <td className="px-4 py-3 text-sm capitalize">{a.status ?? "—"}</td>
-                      <td className="px-4 py-3 text-sm">{a.created_at ? format(new Date(a.created_at), "yyyy-MM-dd HH:mm") : "—"}</td>
+                  {schools.map((school, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm font-medium">{school.school_name}</td>
+                      <td className="px-4 py-3 text-sm">{school.admin_name}</td>
+                      <td className="px-4 py-3 text-sm">{school.admin_email}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <Badge variant={school.status === 'approved' ? 'default' : school.status === 'declined' ? 'destructive' : 'secondary'}>
+                          {school.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm">{format(new Date(school.date_created), "MMM dd, yyyy")}</td>
+                      <td className="px-4 py-3 text-sm text-center">
+                        <Badge variant="outline">{school.admin_count}</Badge>
+                      </td>
                       <td className="px-4 py-3 text-sm text-right space-x-2">
                         <button
-                          className="px-3 py-1 rounded bg-green-600 text-white text-xs hover:bg-green-700 disabled:opacity-50"
-                          onClick={() => updateStatus(a.id, "approved")}
-                          disabled={actionLoadingId === a.id}
+                          className="px-3 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                          onClick={() => openSchoolModal(school)}
                         >
-                          {actionLoadingId === a.id ? "Working…" : "Approve"}
+                          View Details
                         </button>
-                        <button
-                          className="px-3 py-1 rounded bg-yellow-500 text-white text-xs hover:bg-yellow-600 disabled:opacity-50"
-                          onClick={() => updateStatus(a.id, "declined")}
-                          disabled={actionLoadingId === a.id}
-                        >
-                          {actionLoadingId === a.id ? "Working…" : "Decline"}
-                        </button>
-                        <button
-                          className="px-3 py-1 rounded bg-red-600 text-white text-xs hover:bg-red-700 disabled:opacity-50"
-                          onClick={() => deleteAdmin(a.id)}
-                          disabled={actionLoadingId === a.id}
-                        >
-                          {actionLoadingId === a.id ? "Working…" : "Delete"}
-                        </button>
+                        {school.status === 'approved' && (
+                          <button
+                            className="px-3 py-1 rounded bg-red-600 text-white text-xs hover:bg-red-700 disabled:opacity-50"
+                            onClick={() => deactivateSchool(school.school_name)}
+                            disabled={actionLoadingId === school.school_name}
+                          >
+                            {actionLoadingId === school.school_name ? "Working…" : "Deactivate"}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -447,6 +497,103 @@ export default function Dashboard() {
                 disabled={actionLoadingId === selectedApp?.id}
               >
                 {actionLoadingId === selectedApp?.id ? "Approving..." : "Approve & Create Account"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* School Details Modal */}
+        <Dialog open={isSchoolModalOpen} onOpenChange={setIsSchoolModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>School Details</DialogTitle>
+              <DialogDescription>
+                View all admins for this school
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedSchool && (
+              <div className="space-y-4">
+                {/* School Info */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-2">{selectedSchool.school_name}</h3>
+                  <div className="grid grid-cols-3 gap-4 text-sm mt-3">
+                    <div>
+                      <span className="text-muted-foreground block mb-1">Status</span>
+                      <Badge variant={selectedSchool.status === 'approved' ? 'default' : selectedSchool.status === 'declined' ? 'destructive' : 'secondary'}>
+                        {selectedSchool.status}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block mb-1">Created</span>
+                      <span className="font-medium">{format(new Date(selectedSchool.date_created), "MMM dd, yyyy")}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-blue-600">{selectedSchool.admin_count}</div>
+                    <div className="text-sm text-muted-foreground mt-1">Total Admins</div>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-green-600">{selectedSchool.vendor_count}</div>
+                    <div className="text-sm text-muted-foreground mt-1">Total Vendors</div>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-purple-600">{selectedSchool.deliverer_count}</div>
+                    <div className="text-sm text-muted-foreground mt-1">Total Deliverers</div>
+                  </div>
+                </div>
+
+                {/* Admins List */}
+                <div>
+                  <h4 className="font-semibold mb-3">Admin Accounts</h4>
+                  <div className="space-y-2">
+                    {selectedSchool.all_admins.map((admin) => (
+                      <div key={admin.id} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium">{admin.full_name || "N/A"}</div>
+                            <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                              <Mail className="w-3 h-3" />
+                              {admin.email || "N/A"}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Created: {admin.created_at ? format(new Date(admin.created_at), "MMM dd, yyyy") : "N/A"}
+                            </div>
+                          </div>
+                          <div>
+                            <Badge variant={admin.status === 'approved' ? 'default' : admin.status === 'declined' ? 'destructive' : 'secondary'}>
+                              {admin.status || "pending"}
+                            </Badge>
+                          </div>
+                        </div>
+                        {admin.status === 'approved' && (
+                          <div className="mt-3 pt-3 border-t">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => resetAdminPassword(admin.id, admin.email || '', admin.full_name || 'Admin')}
+                              disabled={actionLoadingId === admin.id}
+                            >
+                              {actionLoadingId === admin.id ? "Resetting..." : "Reset Password"}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Close Button */}
+            <div className="flex justify-end pt-4 border-t">
+              <Button variant="outline" onClick={() => setIsSchoolModalOpen(false)}>
+                Close
               </Button>
             </div>
           </DialogContent>
