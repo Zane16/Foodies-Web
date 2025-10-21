@@ -1,17 +1,13 @@
 // app/api/vendors/[id]/route.ts
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const vendorId = params.id;
     if (!vendorId) {
       return NextResponse.json({ error: "Missing vendorId" }, { status: 400 });

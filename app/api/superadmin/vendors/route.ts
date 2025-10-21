@@ -1,14 +1,9 @@
-import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-// Use service role key to bypass RLS
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+import { getSupabaseAdmin } from "@/lib/supabase"
 
 export async function GET(req: Request) {
   try {
+    const supabase = getSupabaseAdmin()
     const { searchParams } = new URL(req.url)
     const organization = searchParams.get('organization')
 
@@ -56,6 +51,7 @@ export async function GET(req: Request) {
 // Deactivate a vendor
 export async function DELETE(req: Request) {
   try {
+    const supabase = getSupabaseAdmin()
     const { vendorId } = await req.json()
 
     if (!vendorId) {

@@ -1,14 +1,9 @@
-import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-// Use service role key to bypass RLS and access admin functions
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+import { getSupabaseAdmin } from "@/lib/supabase"
 
 export async function POST(req: Request) {
   try {
+    const supabase = getSupabaseAdmin()
     const { adminId } = await req.json()
 
     if (!adminId) {
