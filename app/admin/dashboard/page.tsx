@@ -43,6 +43,8 @@ export default function AdminDashboard() {
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [passwordInfo, setPasswordInfo] = useState<{ email: string; password: string; role: string } | null>(null)
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
 
   // Fetch data from backend
   useEffect(() => {
@@ -120,8 +122,19 @@ export default function AdminDashboard() {
     setLoadingId(null)
 
     if (data.success) {
+      // Remove from applications list
       setApplications((prev) => prev.filter((app) => app.id !== applicationId))
       setIsModalOpen(false)
+
+      // If a new user was created with a temp password, show it
+      if (data.tempPassword && selectedApp) {
+        setPasswordInfo({
+          email: selectedApp.email,
+          password: data.tempPassword,
+          role: data.role || selectedApp.role || 'user'
+        })
+        setIsPasswordModalOpen(true)
+      }
     } else {
       alert(data.error || "Error approving application")
     }
@@ -565,6 +578,93 @@ export default function AdminDashboard() {
               disabled={loadingId === selectedApp?.id}
             >
               {loadingId === selectedApp?.id ? "Approving..." : "Approve"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Display Modal */}
+      <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <Shield className="w-5 h-5" />
+              Application Approved!
+            </DialogTitle>
+            <DialogDescription>
+              A new account has been created. Please share these credentials with the user.
+            </DialogDescription>
+          </DialogHeader>
+
+          {passwordInfo && (
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-muted rounded-lg space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase">Role</label>
+                  <p className="text-sm font-medium capitalize">{passwordInfo.role}</p>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase">Email</label>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-mono flex-1">{passwordInfo.email}</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(passwordInfo.email)
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase">Temporary Password</label>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-mono flex-1 bg-background px-3 py-2 rounded border">
+                      {passwordInfo.password}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(passwordInfo.password)
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-xs text-muted-foreground bg-yellow-50 dark:bg-yellow-950 p-3 rounded border border-yellow-200 dark:border-yellow-800">
+                <strong>Important:</strong> Make sure to copy and share these credentials with the user.
+                They will need to change their password on first login.
+              </div>
+
+              <Button
+                className="w-full"
+                onClick={() => {
+                  const credentials = `Email: ${passwordInfo.email}\nPassword: ${passwordInfo.password}`;
+                  navigator.clipboard.writeText(credentials);
+                }}
+              >
+                Copy All Credentials
+              </Button>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsPasswordModalOpen(false)
+                setPasswordInfo(null)
+              }}
+            >
+              Close
             </Button>
           </div>
         </DialogContent>
