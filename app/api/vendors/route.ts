@@ -2,6 +2,9 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, createServerClient } from "@/lib/supabase";
 
+// Mark route as dynamic (uses cookies)
+export const dynamic = 'force-dynamic';
+
 // GET all vendors filtered by admin's organization
 export async function GET() {
   try {

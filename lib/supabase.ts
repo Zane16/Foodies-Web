@@ -1,6 +1,5 @@
 // lib/supabase.ts
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
@@ -21,6 +20,8 @@ export function getSupabaseAdmin() {
 
 // Helper function to create Supabase client with user session for API routes
 export async function createServerClient() {
+  // Import cookies dynamically to avoid issues with client components
+  const { cookies } = await import('next/headers')
   const cookieStore = await cookies()
 
   return createClient(
