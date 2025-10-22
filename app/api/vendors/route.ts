@@ -6,10 +6,11 @@ import { getSupabaseAdmin, createServerClient } from "@/lib/supabase";
 export const dynamic = 'force-dynamic';
 
 // GET all vendors filtered by admin's organization
-export async function GET() {
+export async function GET(req: Request) {
   try {
     // Get the authenticated user's session
-    const supabase = await createServerClient();
+    const cookieHeader = req.headers.get('cookie');
+    const supabase = await createServerClient(cookieHeader);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -34,16 +35,32 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
-    // Fetch vendors with organization from profiles
-    // Join vendor_summary with profiles to filter by organization
+    // Fetch vendors filtered by organization
+    // First get vendor IDs from profiles table that match the organization
+    const { data: orgProfiles, error: profilesError } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("role", "vendor")
+      .eq("organization", profile.organization);
+
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+      return NextResponse.json({ error: profilesError.message }, { status: 500 });
+    }
+
+    const vendorIds = orgProfiles.map(p => p.id);
+
+    // If no vendors in this organization, return empty array
+    if (vendorIds.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    // Now fetch vendor_summary data for these IDs
     const { data, error } = await supabaseAdmin
       .from("vendor_summary")
-      .select(`
-        *,
-        profiles!inner(organization)
-      `)
+      .select("*")
+      .in("id", vendorIds)
       .eq("is_active", true)
-      .eq("profiles.organization", profile.organization)
       .order("created_at", { ascending: false });
 
     if (error) {

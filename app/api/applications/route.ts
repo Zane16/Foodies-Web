@@ -6,10 +6,11 @@ import { getSupabaseAdmin, createServerClient } from "@/lib/supabase";
 export const dynamic = 'force-dynamic';
 
 // GET - Fetch all pending applications filtered by admin's organization
-export async function GET() {
+export async function GET(req: Request) {
   try {
     // Get the authenticated user's session
-    const supabase = await createServerClient();
+    const cookieHeader = req.headers.get('cookie');
+    const supabase = await createServerClient(cookieHeader);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
