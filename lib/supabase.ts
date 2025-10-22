@@ -18,46 +18,4 @@ export function getSupabaseAdmin() {
   return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-// Helper function to create Supabase client with user session for API routes
-export async function createServerClient(cookieHeader?: string | null) {
-  if (cookieHeader) {
-    // For API routes - use cookie from request header
-    return createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Cookie: cookieHeader
-          }
-        }
-      }
-    )
-  }
-
-  // For Server Components - use next/headers
-  const { cookies } = await import('next/headers')
-  const cookieStore = await cookies()
-
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        storage: {
-          getItem: async (key: string) => {
-            return cookieStore.get(key)?.value ?? null
-          },
-          setItem: async (key: string, value: string) => {
-            cookieStore.set(key, value)
-          },
-          removeItem: async (key: string) => {
-            cookieStore.delete(key)
-          },
-        },
-      },
-    }
-  )
-}
-
 

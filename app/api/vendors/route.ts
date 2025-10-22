@@ -1,24 +1,32 @@
 // app/api/vendors/route.ts
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin, createServerClient } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
-// Mark route as dynamic (uses cookies)
+// Mark route as dynamic
 export const dynamic = 'force-dynamic';
 
 // GET all vendors filtered by admin's organization
 export async function GET(req: Request) {
   try {
-    // Get the authenticated user's session
-    const cookieHeader = req.headers.get('cookie');
-    const supabase = await createServerClient(cookieHeader);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Get authorization header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+
+    // Verify the token and get user
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
     if (authError || !user) {
+      console.error("Auth error:", authError);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Get the admin's profile to retrieve their organization
-    const supabaseAdmin = getSupabaseAdmin();
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("organization, role")

@@ -48,27 +48,57 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
+        // Get the current session from Supabase to get the access token
+        const { supabase } = await import("@/lib/supabase")
+        const { data: { session } } = await supabase.auth.getSession()
+
+        if (!session) {
+          console.error("No session found")
+          setLoading(false)
+          return
+        }
+
+        const accessToken = session.access_token
+
         const [appsRes, vendorsRes] = await Promise.all([
-          fetch("/api/applications"),
-          fetch("/api/vendors")
+          fetch("/api/applications", {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`
+            }
+          }),
+          fetch("/api/vendors", {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`
+            }
+          })
         ])
+
+        if (!appsRes.ok) {
+          console.error("Applications fetch failed:", await appsRes.text())
+        }
+        if (!vendorsRes.ok) {
+          console.error("Vendors fetch failed:", await vendorsRes.text())
+        }
+
         const appsData: Application[] = await appsRes.json()
-        
+
         console.log("Applications data:", appsData) // Debug log
-        
-        setApplications(appsData)
+
+        setApplications(Array.isArray(appsData) ? appsData : [])
 
         // Process document URLs - they're already public URLs from Supabase
-        appsData.forEach((app) => {
-          if (app.document_urls && Array.isArray(app.document_urls) && app.document_urls.length > 0) {
-            console.log(`App ${app.id} has ${app.document_urls.length} documents:`, app.document_urls) // Debug log
-            // Use the URLs directly since they're already public
-            setSignedUrls(prev => ({ ...prev, [app.id]: app.document_urls as string[] }))
-          }
-        })
+        if (Array.isArray(appsData)) {
+          appsData.forEach((app) => {
+            if (app.document_urls && Array.isArray(app.document_urls) && app.document_urls.length > 0) {
+              console.log(`App ${app.id} has ${app.document_urls.length} documents:`, app.document_urls) // Debug log
+              // Use the URLs directly since they're already public
+              setSignedUrls(prev => ({ ...prev, [app.id]: app.document_urls as string[] }))
+            }
+          })
+        }
 
         const vendorsData = await vendorsRes.json()
-        setVendors(vendorsData)
+        setVendors(Array.isArray(vendorsData) ? vendorsData : [])
       } catch (error) {
         console.error("Failed to fetch data:", error)
       } finally {
