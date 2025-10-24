@@ -1,14 +1,17 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
 import { supabase } from "@/lib/supabase"
-import { Image as ImageIcon, Upload, X, Loader2 } from "lucide-react"
+import { Image as ImageIcon, Upload, X, Loader2, ZoomIn, ZoomOut } from "lucide-react"
 import AdminLayout from "@/layouts/AdminLayout"
+import Cropper from "react-easy-crop"
+import { getCroppedImg } from "@/lib/cropImage"
 
 interface Settings {
   organization: string
@@ -18,16 +21,30 @@ interface Settings {
   email: string
 }
 
+interface CropState {
+  crop: { x: number; y: number }
+  zoom: number
+  aspect: number
+  croppedAreaPixels: any
+}
+
 export default function AdminSettings() {
   const router = useRouter()
   const [settings, setSettings] = useState<Settings | null>(null)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [uploadingHeader, setUploadingHeader] = useState(false)
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [headerPreview, setHeaderPreview] = useState<string | null>(null)
+
+  // Crop modal states
+  const [cropModalOpen, setCropModalOpen] = useState(false)
+  const [cropType, setCropType] = useState<'logo' | 'header'>('logo')
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
 
   const logoInputRef = useRef<HTMLInputElement>(null)
   const headerInputRef = useRef<HTMLInputElement>(null)
@@ -69,8 +86,8 @@ export default function AdminSettings() {
     fetchSettings()
   }, [router])
 
-  // Handle logo upload
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle image selection (opens crop modal)
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'header') => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -80,66 +97,61 @@ export default function AdminSettings() {
       return
     }
 
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image size must be less than 5MB")
+    // Validate file size (10MB for cropping)
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Image size must be less than 10MB")
       return
     }
 
-    setUploadingLogo(true)
+    // Create preview URL
+    const reader = new FileReader()
+    reader.onload = () => {
+      setImageToCrop(reader.result as string)
+      setCropType(type)
+      setCrop({ x: 0, y: 0 })
+      setZoom(1)
+      setCropModalOpen(true)
+    }
+    reader.readAsDataURL(file)
+
+    // Reset input
+    e.target.value = ''
+  }
+
+  // Handle crop complete
+  const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels)
+  }, [])
+
+  // Handle save cropped image
+  const handleSaveCrop = async () => {
+    if (!imageToCrop || !croppedAreaPixels) return
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error("No session")
+      const croppedImage = await getCroppedImg(
+        imageToCrop,
+        croppedAreaPixels,
+        `${cropType}-${Date.now()}.jpg`
+      )
 
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('type', 'logo')
+      // Close modal
+      setCropModalOpen(false)
 
-      const res = await fetch("/api/upload-image", {
-        method: "POST",
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: formData
-      })
-
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || "Upload failed")
-      }
-
-      const data = await res.json()
-      setLogoPreview(data.url)
-
-      // Update settings in database
-      await updateSettings({ profile_picture_url: data.url })
+      // Upload the cropped image
+      await uploadImage(croppedImage, cropType)
 
     } catch (error: any) {
-      alert(error.message || "Failed to upload logo")
-    } finally {
-      setUploadingLogo(false)
+      alert(error.message || "Failed to crop image")
     }
   }
 
-  // Handle header upload
-  const handleHeaderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert("Please select an image file")
-      return
+  // Upload image to server
+  const uploadImage = async (file: File, type: 'logo' | 'header') => {
+    if (type === 'logo') {
+      setUploadingLogo(true)
+    } else {
+      setUploadingHeader(true)
     }
-
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image size must be less than 5MB")
-      return
-    }
-
-    setUploadingHeader(true)
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -147,7 +159,7 @@ export default function AdminSettings() {
 
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('type', 'header')
+      formData.append('type', type)
 
       const res = await fetch("/api/upload-image", {
         method: "POST",
@@ -163,15 +175,25 @@ export default function AdminSettings() {
       }
 
       const data = await res.json()
-      setHeaderPreview(data.url)
+
+      // Update preview
+      if (type === 'logo') {
+        setLogoPreview(data.url)
+      } else {
+        setHeaderPreview(data.url)
+      }
 
       // Update settings in database
-      await updateSettings({ header_image_url: data.url })
+      await updateSettings(type === 'logo' ? { profile_picture_url: data.url } : { header_image_url: data.url })
 
     } catch (error: any) {
-      alert(error.message || "Failed to upload header")
+      alert(error.message || `Failed to upload ${type}`)
     } finally {
-      setUploadingHeader(false)
+      if (type === 'logo') {
+        setUploadingLogo(false)
+      } else {
+        setUploadingHeader(false)
+      }
     }
   }
 
@@ -196,8 +218,6 @@ export default function AdminSettings() {
       }
 
       const data = await res.json()
-
-      // Update local state
       setSettings(prev => prev ? { ...prev, ...data.profile } : null)
 
     } catch (error: any) {
@@ -305,7 +325,7 @@ export default function AdminSettings() {
                   ref={logoInputRef}
                   type="file"
                   accept="image/*"
-                  onChange={handleLogoUpload}
+                  onChange={(e) => handleImageSelect(e, 'logo')}
                   className="hidden"
                 />
                 <Button
@@ -327,7 +347,7 @@ export default function AdminSettings() {
               </div>
 
               <p className="text-sm text-gray-500">
-                Recommended: Square image (500x500px), max 5MB
+                Recommended: Square image (500x500px), max 10MB
               </p>
             </div>
           </CardContent>
@@ -371,7 +391,7 @@ export default function AdminSettings() {
                   ref={headerInputRef}
                   type="file"
                   accept="image/*"
-                  onChange={handleHeaderUpload}
+                  onChange={(e) => handleImageSelect(e, 'header')}
                   className="hidden"
                 />
                 <Button
@@ -393,13 +413,74 @@ export default function AdminSettings() {
               </div>
 
               <p className="text-sm text-gray-500">
-                Recommended: Wide image (1200x300px), max 5MB
+                Recommended: Wide image (1200x300px), max 10MB
               </p>
             </div>
           </CardContent>
         </Card>
         </div>
       </div>
+
+      {/* Crop Modal */}
+      <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Adjust Image</DialogTitle>
+            <DialogDescription>
+              Crop and zoom your {cropType === 'logo' ? 'logo' : 'header'} to fit perfectly
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Crop Area */}
+            <div className="relative w-full h-96 bg-gray-900 rounded-lg overflow-hidden">
+              {imageToCrop && (
+                <Cropper
+                  image={imageToCrop}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={cropType === 'logo' ? 1 : 4}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={onCropComplete}
+                />
+              )}
+            </div>
+
+            {/* Zoom Control */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Zoom</Label>
+                <span className="text-sm text-gray-500">{Math.round(zoom * 100)}%</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <ZoomOut className="h-4 w-4 text-gray-500" />
+                <Slider
+                  value={[zoom]}
+                  onValueChange={(values) => setZoom(values[0])}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  className="flex-1"
+                />
+                <ZoomIn className="h-4 w-4 text-gray-500" />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCropModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveCrop}>
+              Save & Upload
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   )
 }
