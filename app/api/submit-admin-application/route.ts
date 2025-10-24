@@ -24,15 +24,11 @@ export async function POST(request: Request) {
       .select()
 
     if (error) {
-      console.error('Insert error:', error)
       throw error
     }
 
-    console.log(`📝 Admin application submitted: ${email} (${organization})`);
-
     return NextResponse.json({ success: true, data })
   } catch (error: any) {
-    console.error('API Error:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to submit application' },
       { status: 400 }

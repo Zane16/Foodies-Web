@@ -23,7 +23,6 @@ export async function POST(request: Request) {
       .single()
 
     if (appErr || !application) {
-      console.error('Application fetch error:', appErr)
       return NextResponse.json(
         { error: 'Admin application not found' },
         { status: 404 }
@@ -41,7 +40,6 @@ export async function POST(request: Request) {
     })
 
     if (userErr || !userData?.user) {
-      console.error('User creation error:', userErr)
       return NextResponse.json(
         { error: 'Failed to create user: ' + (userErr?.message || 'Unknown error') },
         { status: 500 }
@@ -60,7 +58,6 @@ export async function POST(request: Request) {
       .eq('id', applicationId)
 
     if (updateErr) {
-      console.error('Application update error:', updateErr)
       return NextResponse.json(
         { error: 'Failed to update application status' },
         { status: 500 }
@@ -82,14 +79,11 @@ export async function POST(request: Request) {
       ])
 
     if (profileErr) {
-      console.error('Profile creation error:', profileErr)
       return NextResponse.json(
         { error: 'Failed to create admin profile: ' + profileErr.message },
         { status: 500 }
       )
     }
-
-    console.log(`✅ Admin approved: ${email} | Password: ${randomPassword}`)
 
     return NextResponse.json({
       success: true,
@@ -99,7 +93,6 @@ export async function POST(request: Request) {
     })
 
   } catch (error: any) {
-    console.error('Approve admin application error:', error)
     return NextResponse.json(
       { error: error.message || 'Server error' },
       { status: 500 }

@@ -13,7 +13,6 @@ export async function GET() {
       .order("created_at", { ascending: true })
 
     if (error) {
-      console.error("Error fetching schools:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -30,7 +29,6 @@ export async function GET() {
       .eq("is_active", true)
 
     if (vendorsError) {
-      console.error("Error fetching vendors:", vendorsError)
       return NextResponse.json({ error: vendorsError.message }, { status: 500 })
     }
 
@@ -41,7 +39,6 @@ export async function GET() {
       .eq("role", "deliverer")
 
     if (deliverersError) {
-      console.error("Error fetching deliverers:", deliverersError)
       return NextResponse.json({ error: deliverersError.message }, { status: 500 })
     }
 
@@ -121,7 +118,6 @@ export async function GET() {
 
     return NextResponse.json({ schools }, { status: 200 })
   } catch (error: any) {
-    console.error("Error in schools API:", error)
     return NextResponse.json(
       { error: error.message || "Internal server error" },
       { status: 500 }

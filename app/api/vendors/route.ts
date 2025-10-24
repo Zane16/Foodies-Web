@@ -22,7 +22,6 @@ export async function GET(req: Request) {
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
     if (authError || !user) {
-      console.error("Auth error:", authError);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -34,7 +33,6 @@ export async function GET(req: Request) {
       .single();
 
     if (profileError || !profile) {
-      console.error("Error fetching admin profile:", profileError);
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
@@ -52,7 +50,6 @@ export async function GET(req: Request) {
       .eq("organization", profile.organization);
 
     if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
       return NextResponse.json({ error: profilesError.message }, { status: 500 });
     }
 
@@ -72,13 +69,11 @@ export async function GET(req: Request) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching vendors:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json(data || []);
   } catch (err) {
-    console.error("GET vendors error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

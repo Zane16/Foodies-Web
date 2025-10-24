@@ -34,13 +34,11 @@ export async function GET(req: Request) {
     const { data: vendors, error } = await query.order("created_at", { ascending: false })
 
     if (error) {
-      console.error("Error fetching vendors:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ vendors }, { status: 200 })
   } catch (error: any) {
-    console.error("Error in vendors API:", error)
     return NextResponse.json(
       { error: error.message || "Internal server error" },
       { status: 500 }
@@ -65,13 +63,11 @@ export async function DELETE(req: Request) {
       .eq("id", vendorId)
 
     if (error) {
-      console.error("Error deactivating vendor:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true }, { status: 200 })
   } catch (error: any) {
-    console.error("Error in vendor deactivation:", error)
     return NextResponse.json(
       { error: error.message || "Internal server error" },
       { status: 500 }

@@ -20,15 +20,11 @@ export async function DELETE(
       .eq("id", vendorId);
 
     if (error) {
-      console.error("Error deactivating vendor:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log(`🚫 Deactivated vendor: ${vendorId}`);
-
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("DELETE vendor error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

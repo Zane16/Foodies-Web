@@ -22,7 +22,6 @@ export async function GET(req: Request) {
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
     if (authError || !user) {
-      console.error("Auth error:", authError);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -34,7 +33,6 @@ export async function GET(req: Request) {
       .single();
 
     if (profileError || !profile) {
-      console.error("Error fetching admin profile:", profileError);
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
@@ -52,13 +50,11 @@ export async function GET(req: Request) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching applications:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json(data || []);
   } catch (err) {
-    console.error("GET applications error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -111,13 +107,11 @@ export async function POST(req: Request) {
       .select();
 
     if (error) {
-      console.error("Insert error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    console.error("route error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

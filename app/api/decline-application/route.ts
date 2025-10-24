@@ -38,16 +38,12 @@ export async function POST(req: Request) {
       .eq("id", applicationId);
 
     if (updateErr) {
-      console.error("Error declining application:", updateErr);
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
-
-    console.log(`❌ Declined application: ${application.email} (${application.role})`);
 
     return NextResponse.json({ success: true });
 
   } catch (err) {
-    console.error("Decline application error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

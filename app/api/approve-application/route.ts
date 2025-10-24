@@ -39,36 +39,28 @@ export async function POST(req: Request) {
     if (userErr) {
       // Check if user already exists
       if (userErr.message?.includes('email_exists') || userErr.code === 'email_exists') {
-        console.log(`User already exists for ${application.email}, fetching existing user...`);
-
         // Get existing user by email
         const { data: { users }, error: listErr } = await supabaseAdmin.auth.admin.listUsers();
 
         if (listErr) {
-          console.error("Error listing users:", listErr);
           return NextResponse.json({ error: "Failed to verify existing user" }, { status: 500 });
         }
 
         const existingUser = users?.find(u => u.email === application.email);
 
         if (!existingUser) {
-          console.error("User exists but could not be found:", userErr);
           return NextResponse.json({ error: "User exists but could not be verified" }, { status: 500 });
         }
 
         userId = existingUser.id;
-        console.log(`Found existing user: ${userId}`);
       } else {
-        console.error("User creation error:", userErr);
         return NextResponse.json({ error: "Failed to create user: " + userErr.message }, { status: 500 });
       }
     } else if (!userData?.user) {
-      console.error("User creation failed with no error");
       return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
     } else {
       userId = userData.user.id;
       isNewUser = true;
-      console.log(`Created new user: ${userId}`);
     }
 
     // Get current admin ID for audit trail
@@ -102,7 +94,6 @@ export async function POST(req: Request) {
       });
 
     if (profileErr) {
-      console.error("Profile creation error:", profileErr);
       return NextResponse.json({ error: profileErr.message }, { status: 500 });
     }
 
@@ -125,16 +116,9 @@ export async function POST(req: Request) {
         .single();
 
       if (vendorErr) {
-        console.error("Vendor creation error:", vendorErr);
         return NextResponse.json({ error: vendorErr.message }, { status: 500 });
       }
       additionalRecord = vendorData;
-    }
-
-    if (isNewUser) {
-      console.log(`✅ Created ${application.role}: ${application.email} | Password: ${randomPassword}`);
-    } else {
-      console.log(`✅ Updated existing user to ${application.role}: ${application.email}`);
     }
 
     return NextResponse.json({
@@ -147,7 +131,6 @@ export async function POST(req: Request) {
     });
 
   } catch (err) {
-    console.error("Approve application error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
