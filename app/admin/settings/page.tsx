@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { supabase } from "@/lib/supabase"
-import { Image as ImageIcon, Upload, X, Loader2, ArrowLeft } from "lucide-react"
+import { Image as ImageIcon, Upload, X, Loader2 } from "lucide-react"
+import AdminLayout from "@/layouts/AdminLayout"
 
 interface Settings {
   organization: string
@@ -226,28 +227,23 @@ export default function AdminSettings() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </AdminLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/admin/dashboard")}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">Manage your organization's branding</p>
-        </div>
+    <AdminLayout>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+            <p className="text-gray-600 mt-1">Manage your organization's branding</p>
+          </div>
 
         {/* Organization Info */}
         <Card className="mb-6">
@@ -402,7 +398,8 @@ export default function AdminSettings() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }

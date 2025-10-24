@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from "@/components/ui/badge"
 import { Shield, Users, Store, Clock, TrendingUp, Eye, FileText, User, Mail, Building2, MapPin, Utensils, Car, Calendar, MessageSquare, X } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import AdminLayout from "@/layouts/AdminLayout"
 
 interface Vendor {
   id: string
@@ -176,36 +177,46 @@ export default function AdminDashboard() {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A'
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     })
   }
 
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-lg text-gray-600">Loading dashboard...</p>
+        </div>
+      </AdminLayout>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
-      {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-10 backdrop-blur-sm bg-card/95">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Manage vendors and monitor the Foodies platform</p>
+    <AdminLayout>
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+        {/* Header */}
+        <div className="bg-card border-b border-border sticky top-0 z-10 backdrop-blur-sm bg-card/95">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <Shield className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+                <p className="text-sm text-muted-foreground">Manage vendors and monitor the Foodies platform</p>
+              </div>
             </div>
           </div>
-          <Button variant="outline" size="sm">Sign Out</Button>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="container mx-auto px-4 py-8">
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Pending Applications</CardTitle>
@@ -398,6 +409,7 @@ export default function AdminDashboard() {
             )}
           </TabsContent>
         </Tabs>
+        </div>
       </div>
 
       {/* Review Modal */}
@@ -669,6 +681,8 @@ export default function AdminDashboard() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      
+    </AdminLayout>
   )
+
 }
