@@ -2,107 +2,245 @@
 @import "tw-animate-css";
 
 :root {
-  /* Modern 2025 Color Palette - White, Black, Indigo */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  /* Foodies Color Palette - Neutral-first with Purple Accents */
+
+  /* Purple Accents (Primary CTAs Only) */
+  --primary: #5B5FDE;
+  --primary-light: #7C7FE5;
+  --primary-dark: #4A4DB8;
+  --primary-foreground: #FFFFFF;
+
+  /* Text Colors */
+  --foreground: #1A202C; /* Primary text - rich dark slate */
+  --secondary-text: #6B7280; /* Secondary text */
+  --tertiary-text: #9CA3AF; /* Tertiary text */
+
+  /* Backgrounds */
+  --background: #F7F7F7; /* Main background - light gray */
+  --card: #FFFFFF; /* Cards/Surface - pure white */
+  --card-foreground: #1A202C;
+  --secondary-surface: #F9FAFB; /* Very light gray */
+
+  /* Headers & Navigation */
+  --header: #1E293B; /* Dark navy - NOT purple */
+  --header-foreground: #FFFFFF;
+
+  /* Borders & Dividers */
+  --border: #E5E7EB; /* Light gray */
+  --border-dark: #D1D5DB; /* Slightly darker */
+
+  /* Form Inputs */
+  --input: #FFFFFF;
+  --input-border: #D1D5DB;
+  --input-placeholder: #9CA3AF;
+
+  /* Icons */
+  --icon-default: #6B7280; /* Neutral gray */
+  --icon-light: #9CA3AF;
+
+  /* Tab Navigation */
+  --tab-default: #9CA3AF; /* Gray */
+  --tab-selected: #5B5FDE; /* Purple - only purple usage */
+  --tab-background: #FFFFFF;
+
+  /* Secondary Actions (Gray Buttons) */
+  --secondary: #FFFFFF;
+  --secondary-foreground: #6B7280;
+  --secondary-border: #D1D5DB;
+  --secondary-hover: #F9FAFB;
+
+  /* Status Colors (Semantic) */
+  --success: #10B981; /* Green */
+  --success-light: #D1FAE5;
+  --success-dark: #059669;
+
+  --warning: #F59E0B; /* Orange */
+  --warning-light: #FEF3C7;
+  --warning-dark: #D97706;
+
+  --destructive: #EF4444; /* Red */
+  --destructive-light: #FEE2E2;
+  --destructive-dark: #DC2626;
+  --destructive-foreground: #FFFFFF;
+
+  --info: #3B82F6; /* Blue - NOT purple */
+  --info-light: #DBEAFE;
+  --info-dark: #2563EB;
+
+  /* Additional UI Elements */
+  --muted: #F9FAFB;
+  --muted-foreground: #6B7280;
+  --accent: #F9FAFB;
+  --accent-foreground: #1A202C;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A202C;
+  --ring: #5B5FDE;
+
+  /* Shadows */
+  --shadow-default: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.12);
+  --shadow-strong: rgba(0, 0, 0, 0.16);
+  --shadow-card: rgba(0, 0, 0, 0.06);
+
+  /* Avatars */
+  --avatar-bg: #E5E7EB;
+  --avatar-border: #D1D5DB;
+
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Sidebar */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1A202C;
+  --sidebar-primary: #5B5FDE;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F9FAFB;
+  --sidebar-accent-foreground: #1A202C;
+  --sidebar-border: #E5E7EB;
+  --sidebar-ring: #5B5FDE;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  /* Dark Mode Colors */
+
+  /* Purple Accents */
+  --primary: #7C7FE5; /* Lighter purple for dark backgrounds */
+  --primary-light: #818CF8;
+  --primary-dark: #5B5FDE;
+  --primary-foreground: #FFFFFF;
+
+  /* Text Colors */
+  --foreground: #F8FAFC; /* Primary text */
+  --secondary-text: #94A3B8; /* Secondary text */
+  --tertiary-text: #64748B; /* Tertiary text */
+
+  /* Backgrounds */
+  --background: #0F172A; /* Very dark blue-gray */
+  --card: #1E293B; /* Dark slate */
+  --card-foreground: #F8FAFC;
+  --secondary-surface: #1A2332;
+
+  /* Headers & Navigation */
+  --header: #0B1120; /* Almost black */
+  --header-foreground: #F8FAFC;
+
+  /* Borders & Dividers */
+  --border: #334155;
+  --border-dark: #475569;
+
+  /* Form Inputs */
+  --input: #1E293B;
+  --input-border: #475569;
+  --input-placeholder: #64748B;
+
+  /* Icons */
+  --icon-default: #94A3B8;
+  --icon-light: #64748B;
+
+  /* Tab Navigation */
+  --tab-default: #64748B;
+  --tab-selected: #7C7FE5; /* Purple */
+  --tab-background: #1E293B;
+
+  /* Secondary Actions */
+  --secondary: #1E293B;
+  --secondary-foreground: #94A3B8;
+  --secondary-border: #475569;
+  --secondary-hover: #1A2332;
+
+  /* Status Colors */
+  --success: #10B981;
+  --success-light: #064E3B;
+  --success-dark: #059669;
+
+  --warning: #F59E0B;
+  --warning-light: #78350F;
+  --warning-dark: #D97706;
+
+  --destructive: #EF4444;
+  --destructive-light: #7F1D1D;
+  --destructive-dark: #DC2626;
+  --destructive-foreground: #F8FAFC;
+
+  --info: #3B82F6;
+  --info-light: #1E3A8A;
+  --info-dark: #2563EB;
+
+  /* Additional UI Elements */
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --accent: #1E293B;
+  --accent-foreground: #F8FAFC;
+  --popover: #1E293B;
+  --popover-foreground: #F8FAFC;
+  --ring: #7C7FE5;
+
+  /* Shadows */
+  --shadow-default: rgba(0, 0, 0, 0.3);
+  --shadow-medium: rgba(0, 0, 0, 0.4);
+  --shadow-strong: rgba(0, 0, 0, 0.5);
+  --shadow-card: rgba(0, 0, 0, 0.2);
+
+  /* Avatars */
+  --avatar-bg: #334155;
+  --avatar-border: #475569;
+
+  /* Sidebar */
+  --sidebar: #0B1120;
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-primary: #7C7FE5;
+  --sidebar-primary-foreground: #F8FAFC;
+  --sidebar-accent: #1E293B;
+  --sidebar-accent-foreground: #F8FAFC;
+  --sidebar-border: #334155;
+  --sidebar-ring: #7C7FE5;
 }
 
 @theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
+  /* Core Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+
+  /* Primary (Purple) */
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
+  /* Secondary (Gray) */
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+
+  /* Muted & Accent */
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+
+  /* Status Colors */
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  /* Form Elements */
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
+
+  /* Headers */
+  --color-header: var(--header);
+  --color-header-foreground: var(--header-foreground);
+
+  /* Radius */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Sidebar */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

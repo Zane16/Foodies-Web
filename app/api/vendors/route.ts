@@ -60,19 +60,21 @@ export async function GET(req: Request) {
       return NextResponse.json([]);
     }
 
-    // Now fetch vendor_summary data for these IDs
+    // Fetch vendor_summary data for these IDs and filter in JavaScript to avoid cache issues
     const { data, error } = await supabaseAdmin
       .from("vendor_summary")
       .select("*")
       .in("id", vendorIds)
-      .eq("is_active", true)
       .order("created_at", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data || []);
+    // Filter to only active vendors in JavaScript
+    const activeVendors = (data || []).filter(v => v.is_active === true);
+
+    return NextResponse.json(activeVendors);
   } catch (err) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
