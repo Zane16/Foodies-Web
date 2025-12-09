@@ -87,7 +87,7 @@ export async function POST(req: Request) {
           full_name: application.full_name,
           email: application.email,
           organization: application.organization || "global",
-          status: "approved", // Set status to approved
+          status: "approved",
         },
       ], {
         onConflict: 'id'

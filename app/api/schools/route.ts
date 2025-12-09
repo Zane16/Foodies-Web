@@ -16,27 +16,30 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Fetch vendors count per organization
+    // Fetch vendors count per organization (only approved and active)
     // Join vendors table with profiles to get organization
     const { data: vendors, error: vendorsError } = await supabase
       .from("vendors")
       .select(`
         id,
         profiles!inner (
-          organization
+          organization,
+          status
         )
       `)
       .eq("is_active", true)
+      .eq("profiles.status", "approved")
 
     if (vendorsError) {
       return NextResponse.json({ error: vendorsError.message }, { status: 500 })
     }
 
-    // Fetch deliverers count per organization
+    // Fetch deliverers count per organization (only approved)
     const { data: deliverers, error: deliverersError } = await supabase
       .from("profiles")
       .select("organization")
       .eq("role", "deliverer")
+      .eq("status", "approved")
 
     if (deliverersError) {
       return NextResponse.json({ error: deliverersError.message }, { status: 500 })

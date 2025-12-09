@@ -41,27 +41,21 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
-    // Fetch ALL deliverers for this organization, then filter in JavaScript
-    // Note: We do this because Supabase appears to cache queries with different filters
+    // Fetch deliverers for this organization (only approved)
     console.log(`[API] Fetching deliverers for organization: ${profile.organization}`)
 
-    const { data: allDelivererProfiles, error: profilesError } = await supabaseAdmin
+    const { data: delivererProfiles, error: profilesError } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, email, status, created_at")
+      .select("id, full_name, email, created_at")
       .eq("role", "deliverer")
       .eq("organization", profile.organization)
-      .order("created_at", { ascending: false });
+      .eq("status", "approved")
+      .order("created_at", { ascending: false});
 
     if (profilesError) {
       console.error("Error fetching deliverer profiles:", profilesError)
       return NextResponse.json({ error: profilesError.message }, { status: 500 });
     }
-
-    // Filter to only approved deliverers in JavaScript to avoid cache issues
-    const delivererProfiles = (allDelivererProfiles || []).filter(d => d.status === 'approved');
-
-    console.log(`[API] Total deliverers: ${allDelivererProfiles?.length || 0}, Approved: ${delivererProfiles.length}`)
-    console.log(`[API] Approved deliverer profiles:`, delivererProfiles)
 
     // If no deliverers in this organization, return empty array
     if (!delivererProfiles || delivererProfiles.length === 0) {
@@ -130,7 +124,7 @@ export async function GET(req: Request) {
         email: deliverer.email,
         vehicle_type: appData?.vehicle_type || 'Not specified',
         availability: appData?.availability || 'Not specified',
-        is_active: deliverer.status === 'approved',
+        is_active: true, // All fetched deliverers are approved
         total_deliveries: stats.total_deliveries,
         active_deliveries: stats.active_deliveries
       };

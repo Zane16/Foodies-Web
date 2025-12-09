@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Truck, Search, CheckCircle2, XCircle, RefreshCw, Package } from "lucide-react"
+import { Truck, Search, Mail, CheckCircle2, XCircle, Package } from "lucide-react"
 import AdminLayout from "@/layouts/AdminLayout"
 import { supabase } from "@/lib/supabase"
 
@@ -82,30 +82,18 @@ export default function DeliverersPage() {
     }
 
     try {
-      console.log(`[CLIENT] Deactivating deliverer ${delivererId}, current status: ${currentStatus}, setting to: ${!currentStatus}`)
-
       const response = await fetch(`/api/deliverers/${delivererId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_active: !currentStatus })
       })
 
-      const result = await response.json()
-      console.log("[CLIENT] Deactivation response:", result)
-
       if (response.ok) {
-        console.log("[CLIENT] Deactivation successful, refreshing list...")
-        // Wait a moment for database to commit
-        await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh deliverers list
         await fetchDeliverers()
-      } else {
-        console.error("[CLIENT] Deactivation failed:", result)
-        alert(`Failed to update deliverer: ${result.error || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error("[CLIENT] Failed to toggle deliverer status:", error)
-      alert("An error occurred while updating the deliverer")
+      console.error("Failed to toggle deliverer status:", error)
     }
   }
 
@@ -122,173 +110,247 @@ export default function DeliverersPage() {
     )
   }
 
+  const activeDeliverers = deliverers.filter(d => d.is_active).length
+  const totalDeliveries = deliverers.reduce((sum, d) => sum + d.total_deliveries, 0)
+  const activeDeliveries = deliverers.reduce((sum, d) => sum + d.active_deliveries, 0)
+
   return (
     <AdminLayout>
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
       <div className="min-h-screen" style={{ backgroundColor: '#F7F7F7' }}>
-        <div className="container mx-auto px-4 py-8">
-          {/* Page Header with Refresh Button */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold" style={{ color: '#1A202C' }}>Deliverer Management</h2>
-              <p className="text-sm mt-1" style={{ color: '#6B7280' }}>Manage and monitor all delivery personnel</p>
-            </div>
-            <Button
-              onClick={fetchDeliverers}
-              className="bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-          </div>
-
+        <div className="container mx-auto px-6 py-8">
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <Card className="bg-white shadow-sm border-gray-200">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium" style={{ color: '#1A202C' }}>Total Deliverers</CardTitle>
-                <Truck className="h-4 w-4" style={{ color: '#6B7280' }} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold" style={{ color: '#1A202C' }}>{deliverers.length}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white shadow-sm border-gray-200">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium" style={{ color: '#1A202C' }}>Active Deliverers</CardTitle>
-                <CheckCircle2 className="h-4 w-4" style={{ color: '#10B981' }} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold" style={{ color: '#10B981' }}>
-                  {deliverers.filter(d => d.is_active).length}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="bg-white shadow-md border-0 hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>Total Deliverers</p>
+                    <div className="text-3xl font-bold mt-2" style={{ color: '#1A202C' }}>{deliverers.length}</div>
+                  </div>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#E0E7FF' }}>
+                    <Truck className="h-6 w-6" style={{ color: '#5B5FDE' }} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-white shadow-sm border-gray-200">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium" style={{ color: '#1A202C' }}>Total Deliveries</CardTitle>
-                <Package className="h-4 w-4" style={{ color: '#6B7280' }} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold" style={{ color: '#1A202C' }}>
-                  {deliverers.reduce((sum, d) => sum + d.total_deliveries, 0)}
+
+            <Card className="bg-white shadow-md border-0 hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>Active</p>
+                    <div className="text-3xl font-bold mt-2" style={{ color: '#10B981' }}>{activeDeliverers}</div>
+                  </div>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#D1FAE5' }}>
+                    <CheckCircle2 className="h-6 w-6" style={{ color: '#10B981' }} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-white shadow-sm border-gray-200">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium" style={{ color: '#1A202C' }}>Active Deliveries</CardTitle>
-                <Package className="h-4 w-4" style={{ color: '#3B82F6' }} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold" style={{ color: '#3B82F6' }}>
-                  {deliverers.reduce((sum, d) => sum + d.active_deliveries, 0)}
+
+            <Card className="bg-white shadow-md border-0 hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>Total Deliveries</p>
+                    <div className="text-3xl font-bold mt-2" style={{ color: '#1A202C' }}>{totalDeliveries}</div>
+                  </div>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
+                    <Package className="h-6 w-6" style={{ color: '#F59E0B' }} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white shadow-md border-0 hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>Active Deliveries</p>
+                    <div className="text-3xl font-bold mt-2" style={{ color: '#3B82F6' }}>{activeDeliveries}</div>
+                  </div>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#DBEAFE' }}>
+                    <Package className="h-6 w-6" style={{ color: '#3B82F6' }} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Search Bar */}
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{ color: '#6B7280' }} />
-              <Input
-                type="text"
-                placeholder="Search deliverers by name, email, or vehicle type..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white border-gray-200"
-                style={{ color: '#1A202C' }}
-              />
-            </div>
-          </div>
-
-          {/* Deliverers Grid */}
-          {filteredDeliverers.length === 0 ? (
-            <Card className="bg-white shadow-sm border-gray-200">
-              <CardContent className="text-center py-12">
-                <Truck className="w-12 h-12 mx-auto mb-4" style={{ color: '#6B7280' }} />
-                <h3 className="text-lg font-semibold mb-2" style={{ color: '#1A202C' }}>
-                  {searchQuery ? "No deliverers found" : "No Active Deliverers"}
-                </h3>
-                <p style={{ color: '#6B7280' }}>
-                  {searchQuery ? "Try adjusting your search" : "Approved deliverers will appear here"}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredDeliverers.map((deliverer) => (
-                <Card key={deliverer.id} className="bg-white shadow-sm border-gray-200 hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle style={{ color: '#1A202C' }}>{deliverer.full_name}</CardTitle>
-                        <CardDescription className="space-y-1 mt-2" style={{ color: '#6B7280' }}>
-                          <div className="text-xs">{deliverer.email}</div>
-                        </CardDescription>
-                      </div>
-                      <Badge
-                        className={deliverer.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
-                      >
-                        {deliverer.is_active ? 'Active' : 'Inactive'}
+          {/* Deliverers Table */}
+          <div className="rounded-lg overflow-hidden shadow-lg">
+            {/* Header with purple background */}
+            <div className="px-8 py-6" style={{ backgroundColor: '#5B5FDE' }}>
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/20">
+                    <Truck className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                      All Deliverers
+                      <Badge className="bg-white/20 border-0 px-2.5 py-0.5 text-xs font-semibold text-white">
+                        {deliverers.length}
                       </Badge>
+                    </h2>
+                    <p className="mt-1.5 text-sm text-white/90">
+                      Showing {filteredDeliverers.length} of {deliverers.length} deliverers
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  {/* Search Bar */}
+                  <div className="relative w-80">
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center z-10">
+                      <Search className="w-5 h-5" style={{ color: '#FFFFFF', opacity: 0.9 }} />
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="text-sm" style={{ color: '#6B7280' }}>
-                      <p className="font-medium" style={{ color: '#1A202C' }}>Vehicle Type</p>
-                      <p className="mt-1 capitalize">{deliverer.vehicle_type}</p>
-                    </div>
-
-                    {deliverer.availability && (
-                      <div className="text-sm" style={{ color: '#6B7280' }}>
-                        <p className="font-medium" style={{ color: '#1A202C' }}>Availability</p>
-                        <p className="mt-1">{deliverer.availability}</p>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="p-2 rounded" style={{ backgroundColor: '#F9FAFB' }}>
-                        <p className="text-xs" style={{ color: '#6B7280' }}>Total Deliveries</p>
-                        <p className="font-bold" style={{ color: '#1A202C' }}>
-                          {deliverer.total_deliveries}
-                        </p>
-                      </div>
-                      <div className="p-2 rounded" style={{ backgroundColor: '#F9FAFB' }}>
-                        <p className="text-xs" style={{ color: '#6B7280' }}>Active</p>
-                        <p className="font-bold" style={{ color: '#3B82F6' }}>
-                          {deliverer.active_deliveries}
-                        </p>
-                      </div>
-                    </div>
-
-                    <Button
-                      variant={deliverer.is_active ? "destructive" : "default"}
-                      size="sm"
-                      className="w-full"
-                      style={deliverer.is_active ?
-                        { backgroundColor: '#EF4444', color: '#FFFFFF' } :
-                        { backgroundColor: '#10B981', color: '#FFFFFF' }
-                      }
-                      onClick={() => handleToggleDeliverer(deliverer.id, deliverer.is_active, deliverer.full_name)}
-                    >
-                      {deliverer.is_active ? (
-                        <>
-                          <XCircle className="w-4 h-4 mr-2" />
-                          Deactivate Deliverer
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-4 h-4 mr-2" />
-                          Activate Deliverer
-                        </>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                    <Input
+                      type="text"
+                      placeholder="Search deliverers..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-12 pr-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl focus:ring-2 focus:ring-white focus:bg-white/20 shadow-lg text-white placeholder-white/60 font-medium transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
+
+            {/* Gap between header and body */}
+            <div className="h-4" style={{ backgroundColor: '#F7F7F7' }}></div>
+
+            {/* Table card with white background */}
+            <Card className="border-0 rounded-none bg-white">
+              {filteredDeliverers.length === 0 ? (
+                <CardContent className="text-center py-12">
+                  <Truck className="w-12 h-12 mx-auto mb-4" style={{ color: '#6B7280' }} />
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: '#1A202C' }}>
+                    {searchQuery ? "No deliverers found" : "No Deliverers"}
+                  </h3>
+                  <p style={{ color: '#6B7280' }}>
+                    {searchQuery ? "Try adjusting your search" : "Approved deliverers will appear here"}
+                  </p>
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead style={{ backgroundColor: '#F9FAFB' }}>
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Deliverer Name</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Contact</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Vehicle</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Deliveries</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Status</th>
+                        <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y bg-white" style={{ borderColor: '#E5E7EB' }}>
+                      {filteredDeliverers.map((deliverer, index) => (
+                        <tr
+                          key={deliverer.id}
+                          className="hover:bg-purple-50 transition-all duration-150"
+                          style={{
+                            animation: `fadeIn 0.3s ease-in-out ${index * 0.05}s both`
+                          }}
+                        >
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white" style={{ backgroundColor: '#5B5FDE' }}>
+                                {deliverer.full_name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-sm" style={{ color: '#1A202C' }}>
+                                  {deliverer.full_name}
+                                </div>
+                                {deliverer.availability && (
+                                  <div className="text-xs mt-1" style={{ color: '#6B7280' }}>
+                                    {deliverer.availability}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4" style={{ color: '#9CA3AF' }} />
+                              <span className="text-sm" style={{ color: '#6B7280' }}>{deliverer.email}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-2">
+                              <Truck className="w-4 h-4" style={{ color: '#9CA3AF' }} />
+                              <span className="text-sm capitalize font-medium" style={{ color: '#1A202C' }}>
+                                {deliverer.vehicle_type}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="text-sm" style={{ color: '#6B7280' }}>
+                              <div className="flex items-center gap-2">
+                                <Package className="w-4 h-4" style={{ color: '#9CA3AF' }} />
+                                <span className="font-medium">{deliverer.total_deliveries} total</span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Package className="w-4 h-4" style={{ color: '#3B82F6' }} />
+                                <span className="text-xs" style={{ color: '#3B82F6' }}>{deliverer.active_deliveries} active</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <Badge
+                              className={`px-3 py-1 rounded-full font-medium text-xs ${
+                                deliverer.is_active
+                                  ? 'bg-green-100 text-green-700 border border-green-200'
+                                  : 'bg-gray-100 text-gray-700 border border-gray-200'
+                              }`}
+                            >
+                              {deliverer.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-5 text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={`font-medium transition-all ${
+                                deliverer.is_active
+                                  ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300'
+                                  : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100 hover:border-green-300'
+                              }`}
+                              onClick={() => handleToggleDeliverer(deliverer.id, deliverer.is_active, deliverer.full_name)}
+                            >
+                              {deliverer.is_active ? (
+                                <>
+                                  <XCircle className="w-4 h-4 mr-2" />
+                                  Deactivate
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                                  Activate
+                                </>
+                              )}
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          </div>
         </div>
       </div>
     </AdminLayout>

@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Shield, Users, Store, Clock, Eye, FileText, User, Mail, Building2, Car, MessageSquare } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Shield, Users, Store, Clock, Eye, FileText, User, Mail, Building2, Car, MessageSquare, Search } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import AdminLayout from "@/layouts/AdminLayout"
 
@@ -27,6 +29,7 @@ interface Application {
 
 export default function AdminDashboard() {
   const [applications, setApplications] = useState<Application[]>([])
+  const [filteredApplications, setFilteredApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
   const [signedUrls, setSignedUrls] = useState<{ [id: string]: string[] }>({})
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -34,6 +37,8 @@ export default function AdminDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [passwordInfo, setPasswordInfo] = useState<{ email: string; password: string; role: string } | null>(null)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [roleFilter, setRoleFilter] = useState("all")
 
   // Fetch data from backend
   useEffect(() => {
@@ -82,6 +87,29 @@ export default function AdminDashboard() {
     }
     fetchData()
   }, [])
+
+  // Filter applications based on search and role
+  useEffect(() => {
+    let filtered = applications
+
+    // Filter by role
+    if (roleFilter !== "all") {
+      filtered = filtered.filter(app => app.role === roleFilter)
+    }
+
+    // Filter by search query
+    if (searchQuery.trim() !== "") {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(app =>
+        app.full_name.toLowerCase().includes(query) ||
+        app.email.toLowerCase().includes(query) ||
+        app.business_name?.toLowerCase().includes(query) ||
+        app.vehicle_type?.toLowerCase().includes(query)
+      )
+    }
+
+    setFilteredApplications(filtered)
+  }, [applications, searchQuery, roleFilter])
 
   // Approve application
   const handleApprove = async (applicationId: string) => {
@@ -160,145 +188,253 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
       <div className="min-h-screen" style={{ backgroundColor: '#F7F7F7' }}>
-        <div className="container mx-auto px-4 py-8">
-          {/* Stats Overview - White Cards with Shadow */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="bg-white shadow-sm border-gray-200">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium" style={{ color: '#1A202C' }}>Pending Applications</CardTitle>
-              <Clock className="h-4 w-4" style={{ color: '#6B7280' }} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" style={{ color: '#1A202C' }}>{applications.length}</div>
-              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Awaiting review</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white shadow-sm border-gray-200">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium" style={{ color: '#1A202C' }}>Vendors</CardTitle>
-              <Store className="h-4 w-4" style={{ color: '#10B981' }} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" style={{ color: '#10B981' }}>View All</div>
-              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Manage active vendors</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white shadow-sm border-gray-200">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium" style={{ color: '#1A202C' }}>Deliverers</CardTitle>
-              <Users className="h-4 w-4" style={{ color: '#3B82F6' }} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" style={{ color: '#3B82F6' }}>View All</div>
-              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>Track delivery personnel</p>
-            </CardContent>
-          </Card>
-        </div>
+        <div className="container mx-auto px-6 py-8">
+          {/* Stats Overview - Redesigned Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card className="bg-white shadow-md border-0 hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>Pending Applications</CardTitle>
+                  <div className="text-3xl font-bold mt-2" style={{ color: '#F59E0B' }}>{applications.length}</div>
+                </div>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEF3C7' }}>
+                  <Clock className="h-6 w-6" style={{ color: '#F59E0B' }} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Awaiting review</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-white shadow-md border-0 hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>Vendors</CardTitle>
+                  <div className="text-3xl font-bold mt-2" style={{ color: '#10B981' }}>View All</div>
+                </div>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#D1FAE5' }}>
+                  <Store className="h-6 w-6" style={{ color: '#10B981' }} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Manage active vendors</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-white shadow-md border-0 hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>Deliverers</CardTitle>
+                  <div className="text-3xl font-bold mt-2" style={{ color: '#3B82F6' }}>View All</div>
+                </div>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#DBEAFE' }}>
+                  <Users className="h-6 w-6" style={{ color: '#3B82F6' }} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Track delivery personnel</p>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Pending Applications Section */}
-          <div className="space-y-4">
+          <div className="rounded-lg overflow-hidden shadow-lg">
+            {/* Header with purple background */}
+            <div className="px-8 py-6" style={{ backgroundColor: '#5B5FDE' }}>
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/20">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                      All Applications
+                      <Badge className="bg-white/20 border-0 px-2.5 py-0.5 text-xs font-semibold text-white">
+                        {applications.length}
+                      </Badge>
+                    </h2>
+                    <p className="mt-1.5 text-sm text-white/90">
+                      Showing {filteredApplications.length} of {applications.length} applications
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  {/* Search Bar */}
+                  <div className="relative w-80">
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center z-10">
+                      <Search className="w-5 h-5" style={{ color: '#FFFFFF', opacity: 0.9 }} />
+                    </div>
+                    <Input
+                      type="text"
+                      placeholder="Search by name, email or details..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-12 pr-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl focus:ring-2 focus:ring-white focus:bg-white/20 shadow-lg text-white placeholder-white/60 font-medium transition-all"
+                    />
+                  </div>
+                  {/* Filter Dropdown */}
+                  <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="w-48 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg py-3 text-white font-medium focus:ring-2 focus:ring-white focus:bg-white/20 transition-all [&_svg]:!text-white [&_svg]:!opacity-90">
+                      <SelectValue placeholder="Filter by role" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white rounded-xl shadow-xl border-0 overflow-hidden">
+                      <SelectItem value="all" className="cursor-pointer hover:bg-purple-50 focus:bg-purple-50 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                          <span className="font-medium">All Roles</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="vendor" className="cursor-pointer hover:bg-purple-50 focus:bg-purple-50 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#5B5FDE' }}></div>
+                          <span className="font-medium">Vendors</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="deliverer" className="cursor-pointer hover:bg-blue-50 focus:bg-blue-50 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#3B82F6' }}></div>
+                          <span className="font-medium">Deliverers</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Gap between header and body */}
+            <div className="h-4" style={{ backgroundColor: '#F7F7F7' }}></div>
+
+            {/* Table card with white background */}
+            <Card className="border-0 rounded-none bg-white">
+
             {loading ? (
-              <Card className="bg-white shadow-sm border-gray-200">
-                <CardContent className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#5B5FDE' }}></div>
-                  <p style={{ color: '#6B7280' }}>Loading applications...</p>
-                </CardContent>
-              </Card>
-            ) : applications.length === 0 ? (
-              <Card className="bg-white shadow-sm border-gray-200">
-                <CardContent className="text-center py-12">
-                  <Clock className="w-12 h-12 mx-auto mb-4" style={{ color: '#6B7280' }} />
-                  <h3 className="text-lg font-semibold mb-2" style={{ color: '#1A202C' }}>No Pending Applications</h3>
-                  <p style={{ color: '#6B7280' }}>New vendor applications will appear here for review</p>
-                </CardContent>
-              </Card>
+              <CardContent className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#5B5FDE' }}></div>
+                <p style={{ color: '#6B7280' }}>Loading applications...</p>
+              </CardContent>
+            ) : filteredApplications.length === 0 ? (
+              <CardContent className="text-center py-12">
+                <Clock className="w-12 h-12 mx-auto mb-4" style={{ color: '#6B7280' }} />
+                <h3 className="text-lg font-semibold mb-2" style={{ color: '#1A202C' }}>
+                  {applications.length === 0 ? "No Pending Applications" : "No Results Found"}
+                </h3>
+                <p style={{ color: '#6B7280' }}>
+                  {applications.length === 0 ? "New applications will appear here for review" : "Try adjusting your search or filter"}
+                </p>
+              </CardContent>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {applications.map((app) => (
-                  <Card key={app.id} className="bg-white shadow-sm border-gray-200 hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="flex items-center gap-2" style={{ color: '#1A202C' }}>
-                            {app.full_name}
-                            <Badge
-                              variant={app.role === 'vendor' ? 'default' : 'secondary'}
-                              className={app.role === 'vendor' ? 'bg-[#5B5FDE] text-white' : ''}
-                            >
-                              {app.role || 'N/A'}
-                            </Badge>
-                          </CardTitle>
-                          <CardDescription className="flex items-center gap-1 mt-1" style={{ color: '#6B7280' }}>
-                            <Mail className="w-3 h-3" />
-                            {app.email}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {/* Quick Preview Info */}
-                      <div className="space-y-2 text-sm">
-                        {app.business_name && (
-                          <div className="flex items-center gap-2" style={{ color: '#6B7280' }}>
-                            <Building2 className="w-4 h-4" />
-                            <span className="truncate">{app.business_name}</span>
-                          </div>
-                        )}
-                        {app.vehicle_type && (
-                          <div className="flex items-center gap-2" style={{ color: '#6B7280' }}>
-                            <Car className="w-4 h-4" />
-                            <span>{app.vehicle_type}</span>
-                          </div>
-                        )}
-                        {app.organization && (
-                          <div className="flex items-center gap-2" style={{ color: '#6B7280' }}>
-                            <Users className="w-4 h-4" />
-                            <span className="truncate">{app.organization}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 text-xs" style={{ color: '#9CA3AF' }}>
-                          <Clock className="w-3 h-3" />
-                          <span>{formatDate(app.created_at)}</span>
-                        </div>
-                      </div>
-
-                      {/* Documents Preview */}
-                      {signedUrls[app.id] && signedUrls[app.id].length > 0 && (
-                        <div className="flex gap-2 overflow-x-auto pb-2">
-                          {signedUrls[app.id].slice(0, 3).map((url, idx) => (
-                            <img
-                              key={idx}
-                              src={url}
-                              alt={`Document ${idx + 1}`}
-                              className="w-16 h-16 object-cover rounded border"
-                              style={{ borderColor: '#E5E7EB' }}
-                            />
-                          ))}
-                          {signedUrls[app.id].length > 3 && (
-                            <div className="w-16 h-16 rounded border flex items-center justify-center text-xs" style={{ backgroundColor: '#F9FAFB', borderColor: '#E5E7EB', color: '#6B7280' }}>
-                              +{signedUrls[app.id].length - 3}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead style={{ backgroundColor: '#F9FAFB' }}>
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Applicant Name</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Role</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Email</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Details</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Date Applied</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Status</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y bg-white" style={{ borderColor: '#E5E7EB' }}>
+                    {filteredApplications.map((app, index) => (
+                      <tr
+                        key={app.id}
+                        className="hover:bg-purple-50 transition-all duration-150"
+                        style={{
+                          animation: `fadeIn 0.3s ease-in-out ${index * 0.05}s both`
+                        }}
+                      >
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white" style={{
+                              backgroundColor: app.role === 'vendor' ? '#5B5FDE' : app.role === 'deliverer' ? '#3B82F6' : '#10B981'
+                            }}>
+                              {app.full_name.charAt(0).toUpperCase()}
                             </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Action Buttons - Gray secondary button */}
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          variant="outline"
-                          className="flex-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                          onClick={() => openReviewModal(app)}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Review
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                            <div className="font-semibold text-sm" style={{ color: '#1A202C' }}>
+                              {app.full_name}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <Badge
+                            variant="default"
+                            className={`px-3 py-1 rounded-full font-medium text-xs ${
+                              app.role === 'vendor'
+                                ? 'bg-purple-100 text-purple-700'
+                                : app.role === 'deliverer'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-green-100 text-green-700'
+                            }`}
+                          >
+                            {app.role ? app.role.charAt(0).toUpperCase() + app.role.slice(1) : 'N/A'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4" style={{ color: '#9CA3AF' }} />
+                            <span className="text-sm" style={{ color: '#6B7280' }}>{app.email}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="text-sm" style={{ color: '#6B7280' }}>
+                            {app.business_name && (
+                              <div className="flex items-center gap-2 mb-1">
+                                <Building2 className="w-4 h-4" style={{ color: '#9CA3AF' }} />
+                                <span className="truncate max-w-[180px] font-medium">{app.business_name}</span>
+                              </div>
+                            )}
+                            {app.vehicle_type && (
+                              <div className="flex items-center gap-2">
+                                <Car className="w-4 h-4" style={{ color: '#9CA3AF' }} />
+                                <span className="font-medium">{app.vehicle_type}</span>
+                              </div>
+                            )}
+                            {!app.business_name && !app.vehicle_type && <span style={{ color: '#D1D5DB' }}>—</span>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" style={{ color: '#9CA3AF' }} />
+                            <span className="text-sm" style={{ color: '#6B7280' }}>{formatDate(app.created_at)}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <Badge className="bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 rounded-full font-medium text-xs">
+                            Pending
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-5 text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100 hover:border-purple-300 font-medium transition-all"
+                            onClick={() => openReviewModal(app)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Review
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
+          </Card>
           </div>
         </div>
       </div>
