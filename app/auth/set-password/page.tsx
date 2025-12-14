@@ -79,9 +79,69 @@ export default function SetPasswordPage() {
         throw updateError
       }
 
-      // Update profile status to active
+      // Get user session
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
+      if (!user) {
+        throw new Error('No user session found')
+      }
+
+      // Check if profile exists, if not create it
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (!existingProfile) {
+        // Create profile from user metadata
+        const metadata = user.user_metadata
+        const userRole = metadata.role || 'admin'
+
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            email: user.email,
+            full_name: metadata.full_name || '',
+            role: userRole,
+            organization: metadata.organization || 'global',
+            status: 'active'
+          })
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError)
+          throw new Error('Failed to create profile')
+        }
+
+        // If vendor, also need to get application details and create vendor record
+        if (userRole === 'vendor') {
+          // Fetch the application details
+          const { data: application } = await supabase
+            .from('applications')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('role', 'vendor')
+            .single()
+
+          if (application) {
+            const { error: vendorError } = await supabase
+              .from('vendors')
+              .insert({
+                id: user.id,
+                business_name: application.business_name || metadata.full_name,
+                business_address: application.business_address,
+                menu_summary: application.menu_summary,
+                is_active: true
+              })
+
+            if (vendorError) {
+              console.error('Vendor creation error:', vendorError)
+              // Continue anyway - admin can fix this later
+            }
+          }
+        }
+      } else {
+        // Update existing profile to active
         await supabase
           .from('profiles')
           .update({ status: 'active' })
@@ -89,6 +149,7 @@ export default function SetPasswordPage() {
       }
 
       // Redirect based on role
+      const userRole = existingProfile?.role || user.user_metadata.role || 'admin'
       const dashboardMap: Record<string, string> = {
         admin: '/admin/dashboard',
         vendor: '/vendor/dashboard',
@@ -96,7 +157,7 @@ export default function SetPasswordPage() {
         superadmin: '/superadmin/dashboard'
       }
 
-      const redirectUrl = dashboardMap[role] || '/admin/dashboard'
+      const redirectUrl = dashboardMap[userRole] || '/admin/dashboard'
       router.push(redirectUrl)
 
     } catch (err: any) {

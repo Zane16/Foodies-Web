@@ -30,6 +30,15 @@ export async function POST(request: Request) {
     }
 
     // Step 2: Invite user via Supabase (sends automatic email)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const redirectUrl = `${appUrl}/auth/callback`;
+
+    console.log('=== EMAIL DEBUG ===');
+    console.log('NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
+    console.log('Final appUrl:', appUrl);
+    console.log('Redirect URL:', redirectUrl);
+    console.log('==================');
+
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       application.email,
       {
@@ -38,7 +47,7 @@ export async function POST(request: Request) {
           organization: application.organization || "global",
           role: 'admin'
         },
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback`
+        redirectTo: redirectUrl
       }
     )
 
@@ -49,34 +58,13 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    // Step 3: Create the profile
-    const { data: profile, error: profileErr } = await supabaseAdmin
-      .from("profiles")
-      .insert({
-        id: authData.user.id,
-        email: application.email,
-        full_name: application.full_name,
-        role: 'admin',
-        status: "approved",
-        organization: application.organization || "global",
-      })
-      .select()
-      .single();
-
-    if (profileErr) {
-      console.error("Profile creation error:", profileErr);
-      // Cleanup: delete the auth user if profile creation fails
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-      return NextResponse.json({
-        error: "Failed to create admin profile: " + profileErr.message
-      }, { status: 500 });
-    }
-
-    // Step 4: Update application status
+    // Step 3: Update application status (profile will be created when user sets password)
+    // Store the auth user ID in the application for reference
     await supabaseAdmin
       .from("applications")
       .update({
         status: "approved",
+        user_id: authData.user.id,
         reviewed_at: new Date().toISOString(),
         reviewed_by: superadminId || null,
       })
@@ -85,11 +73,10 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: "Admin application approved. Invitation email sent via Supabase.",
-      profile: {
-        id: profile.id,
-        email: profile.email,
-        role: profile.role,
-        organization: profile.organization,
+      user: {
+        id: authData.user.id,
+        email: application.email,
+        role: 'admin',
       }
     })
 
