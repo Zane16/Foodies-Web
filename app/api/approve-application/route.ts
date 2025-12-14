@@ -1,4 +1,3 @@
-// app/api/approve-application/route.ts
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
@@ -9,10 +8,15 @@ export async function POST(req: Request) {
     const { applicationId, adminId } = body;
 
     if (!applicationId) {
-      return NextResponse.json({ error: "applicationId required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "applicationId required" },
+        { status: 400 }
+      );
     }
 
-    // Step 1: Get the application record
+    // ─────────────────────────────────────────────
+    // Step 1: Fetch application
+    // ─────────────────────────────────────────────
     const { data: application, error: appErr } = await supabaseAdmin
       .from("applications")
       .select("*")
@@ -20,103 +24,135 @@ export async function POST(req: Request) {
       .single();
 
     if (appErr || !application) {
-      return NextResponse.json({ error: "Application not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Application not found" },
+        { status: 404 }
+      );
     }
 
-    console.log('Application data:', {
+    console.error("APPLICATION:", {
       id: application.id,
       email: application.email,
       role: application.role,
-      organization: application.organization
+      organization: application.organization,
+      notes: application.notes,
     });
 
-    // Step 2: Determine redirect URL based on role
-    let redirectUrl;
-    if (application.role === 'admin') {
-      // Admins use the web dashboard
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // ─────────────────────────────────────────────
+    // Step 2: Redirect URL
+    // ─────────────────────────────────────────────
+    let redirectUrl: string;
+
+    if (application.role === "admin") {
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       redirectUrl = `${appUrl}/auth/callback`;
     } else {
-      // Vendors and deliverers use the mobile app
-      redirectUrl = 'foodies://auth/set-password';
+      redirectUrl = "foodies://auth/set-password";
     }
 
-    // Step 3: Handle organization for admin applications (before invite)
-    let organizationId = null;
-    if (application.role === 'admin' && application.organization) {
-      const orgDomain = application.organization;
+    // ─────────────────────────────────────────────
+    // Step 3: Organization handling (ADMIN ONLY)
+    // ─────────────────────────────────────────────
+    let organizationId: string | null = null;
 
-      console.log('Admin application - checking organization for domain:', orgDomain);
+    if (application.role === "admin") {
+      const orgName = application.organization;
+      const orgDomain = application.notes; // ✅ FIXED SOURCE
 
-      // Check if organization exists with this domain
-      const { data: existingOrg, error: findError } = await supabaseAdmin
-        .from('organizations')
-        .select('id')
-        .contains('email_domains', [orgDomain])
-        .maybeSingle();
+      if (!orgName || !orgDomain) {
+        return NextResponse.json(
+          { error: "Admin application missing organization or domain" },
+          { status: 400 }
+        );
+      }
+
+      console.error("ADMIN ORG CHECK:", {
+        orgName,
+        orgDomain,
+      });
+
+      // Check existing organization by domain
+      const { data: existingOrg, error: findError } =
+        await supabaseAdmin
+          .from("organizations")
+          .select("id")
+          .contains("email_domains", [orgDomain])
+          .maybeSingle();
 
       if (findError) {
-        console.error('Error checking for existing organization:', findError);
+        console.error("Org lookup failed:", findError);
+        return NextResponse.json(
+          { error: "Organization lookup failed" },
+          { status: 500 }
+        );
       }
 
-      organizationId = existingOrg?.id;
-      console.log('Existing organization found:', existingOrg ? 'Yes' : 'No');
-
-      // Create organization if it doesn't exist
-      if (!existingOrg) {
-        const orgSlug = orgDomain.replace(/\./g, '-').toLowerCase();
-        const orgName = orgDomain.split('.')[0].charAt(0).toUpperCase() + orgDomain.split('.')[0].slice(1);
-
-        console.log('Creating organization:', { name: orgName, slug: orgSlug, email_domains: [orgDomain] });
+      if (existingOrg) {
+        organizationId = existingOrg.id;
+      } else {
+        // Create organization
+        const slug = orgName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "");
 
         const { data: newOrg, error: orgError } = await supabaseAdmin
-          .from('organizations')
+          .from("organizations")
           .insert({
             name: orgName,
-            slug: orgSlug,
+            slug,
             email_domains: [orgDomain],
-            status: 'active'
+            status: "active",
           })
-          .select('id')
+          .select("id")
           .single();
 
-        if (orgError) {
-          console.error('Failed to create organization:', orgError);
-        } else {
-          console.log('Organization created successfully:', newOrg);
-          organizationId = newOrg?.id || null;
+        if (orgError || !newOrg) {
+          console.error("Failed to create organization:", orgError);
+          return NextResponse.json(
+            { error: "Failed to create organization" },
+            { status: 500 }
+          );
         }
+
+        organizationId = newOrg.id;
       }
     }
 
-    console.log('=== EMAIL DEBUG ===');
-    console.log('Application Role:', application.role);
-    console.log('Organization ID:', organizationId);
-    console.log('Redirect URL:', redirectUrl);
-    console.log('==================');
+    console.error("ORG RESULT:", {
+      organizationId,
+      redirectUrl,
+    });
 
-    // Step 4: Invite user via Supabase (sends automatic email)
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      application.email,
-      {
-        data: {
-          full_name: application.full_name,
-          organization: application.organization || "global",
-          organization_id: organizationId,
-          role: application.role
-        },
-        redirectTo: redirectUrl
-      }
-    )
+    // ─────────────────────────────────────────────
+    // Step 4: Invite user via Supabase
+    // ─────────────────────────────────────────────
+    const { data: authData, error: authError } =
+      await supabaseAdmin.auth.admin.inviteUserByEmail(
+        application.email,
+        {
+          data: {
+            full_name: application.full_name,
+            role: application.role,
+            organization_id: organizationId,
+            organization: application.organization || "global",
+          },
+          redirectTo: redirectUrl,
+        }
+      );
 
-    if (authError || !authData.user) {
-      console.error("Auth invite error:", authError);
-      return NextResponse.json({
-        error: "Failed to invite user: " + authError?.message
-      }, { status: 500 });
+    if (authError || !authData?.user) {
+      console.error("Auth invite failed:", authError);
+      return NextResponse.json(
+        { error: "Failed to invite user" },
+        { status: 500 }
+      );
     }
 
-    // Step 5: Update application status (profile will be created when user sets password)
+    // ─────────────────────────────────────────────
+    // Step 5: Update application status
+    // ─────────────────────────────────────────────
     await supabaseAdmin
       .from("applications")
       .update({
@@ -129,16 +165,18 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `${application.role} application approved. Invitation email sent via Supabase.`,
+      message: `${application.role} application approved. Invitation sent.`,
       user: {
         id: authData.user.id,
         email: application.email,
         role: application.role,
-      }
+      },
     });
-
   } catch (err) {
-    console.error("Approval error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("APPROVAL ERROR:", err);
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
   }
 }
