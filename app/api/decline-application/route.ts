@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   try {
     const supabaseAdmin = getSupabaseAdmin();
     const body = await req.json();
-    const { applicationId } = body;
+    const { applicationId, adminId, reason } = body;
 
     if (!applicationId) {
       return NextResponse.json({ error: "applicationId required" }, { status: 400 });
@@ -23,17 +23,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Application not found" }, { status: 404 });
     }
 
-    // Get current admin ID for audit trail
-    const { data: { user: currentUser } } = await supabaseAdmin.auth.getUser();
-    const reviewedBy = currentUser?.id || null;
-
     // Update application status to declined with audit trail
     const { error: updateErr } = await supabaseAdmin
       .from("applications")
       .update({
         status: "declined",
         reviewed_at: new Date().toISOString(),
-        reviewed_by: reviewedBy
+        reviewed_by: adminId || null,
+        notes: reason || "Application declined",
       })
       .eq("id", applicationId);
 
@@ -41,9 +38,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    // Optionally send a decline notification email
+    // TODO: Implement decline notification email if needed
+
+    return NextResponse.json({
+      success: true,
+      message: "Application declined",
+    });
 
   } catch (err) {
+    console.error("Decline error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

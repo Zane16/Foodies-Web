@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, Settings, LogOut, School, Users, Store, Truck, Clock, CheckCircle2, AlertCircle } from "lucide-react"
+import { LayoutDashboard, Settings, LogOut, School, Users, Store, Truck, Clock, CheckCircle2, AlertCircle, UserCheck } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 interface QuickStats {
@@ -143,6 +143,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       icon: LayoutDashboard
     },
     {
+      label: "Customers",
+      href: "/admin/customers",
+      icon: UserCheck
+    },
+    {
       label: "Vendors",
       href: "/admin/vendors",
       icon: Store
@@ -151,6 +156,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       label: "Deliverers",
       href: "/admin/deliverers",
       icon: Truck
+    },
+    {
+      label: "Users",
+      href: "/admin/users",
+      icon: Users
     },
     {
       label: "Settings",

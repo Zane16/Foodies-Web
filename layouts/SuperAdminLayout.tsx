@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, Store, Settings, LogOut, Shield, Users, Building2, Clock, CheckCircle2, AlertCircle } from "lucide-react"
+import { LayoutDashboard, Store, Settings, LogOut, Shield, Users, Building2, Clock, CheckCircle2, AlertCircle, UserCog, UserCheck } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 interface QuickStats {
@@ -85,6 +85,11 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       icon: LayoutDashboard
     },
     {
+      label: "Customers",
+      href: "/superadmin/customers",
+      icon: UserCheck
+    },
+    {
       label: "Vendors",
       href: "/superadmin/vendors",
       icon: Store
@@ -93,6 +98,11 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       label: "Deliverers",
       href: "/superadmin/deliverers",
       icon: Users
+    },
+    {
+      label: "User Management",
+      href: "/superadmin/users",
+      icon: UserCog
     },
     {
       label: "Settings",
