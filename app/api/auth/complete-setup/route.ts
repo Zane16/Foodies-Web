@@ -34,10 +34,10 @@ export async function POST(request: Request) {
       .single()
 
     if (existingProfile) {
-      // Profile exists, just update status to active
+      // Profile exists, just update status to approved
       await supabaseAdmin
         .from('profiles')
-        .update({ status: 'active' })
+        .update({ status: 'approved' })
         .eq('id', user.id)
 
       return NextResponse.json({
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
         full_name: metadata.full_name || '',
         role: userRole,
         organization: metadata.organization || 'global',
-        status: 'active'
+        status: 'approved'
       })
       .select()
       .single()
