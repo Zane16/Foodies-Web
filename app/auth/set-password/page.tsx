@@ -85,71 +85,30 @@ export default function SetPasswordPage() {
         throw new Error('No user session found')
       }
 
-      // Check if profile exists, if not create it
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (!existingProfile) {
-        // Create profile from user metadata
-        const metadata = user.user_metadata
-        const userRole = metadata.role || 'admin'
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            email: user.email,
-            full_name: metadata.full_name || '',
-            role: userRole,
-            organization: metadata.organization || 'global',
-            status: 'active'
-          })
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError)
-          throw new Error('Failed to create profile')
-        }
-
-        // If vendor, also need to get application details and create vendor record
-        if (userRole === 'vendor') {
-          // Fetch the application details
-          const { data: application } = await supabase
-            .from('applications')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('role', 'vendor')
-            .single()
-
-          if (application) {
-            const { error: vendorError } = await supabase
-              .from('vendors')
-              .insert({
-                id: user.id,
-                business_name: application.business_name || metadata.full_name,
-                business_address: application.business_address,
-                menu_summary: application.menu_summary,
-                is_active: true
-              })
-
-            if (vendorError) {
-              console.error('Vendor creation error:', vendorError)
-              // Continue anyway - admin can fix this later
-            }
-          }
-        }
-      } else {
-        // Update existing profile to active
-        await supabase
-          .from('profiles')
-          .update({ status: 'active' })
-          .eq('id', user.id)
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('No session found')
       }
 
+      // Call API to complete profile setup (uses admin permissions)
+      const setupResponse = await fetch('/api/auth/complete-setup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+
+      if (!setupResponse.ok) {
+        const errorData = await setupResponse.json()
+        throw new Error(errorData.error || 'Failed to complete setup')
+      }
+
+      const { profile } = await setupResponse.json()
+
       // Redirect based on role
-      const userRole = existingProfile?.role || user.user_metadata.role || 'admin'
+      const userRole = profile?.role || user.user_metadata.role || 'admin'
       const dashboardMap: Record<string, string> = {
         admin: '/admin/dashboard',
         vendor: '/vendor/dashboard',
