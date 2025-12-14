@@ -24,6 +24,7 @@ export default function AdminApplicationForm() {
 
     const organization = (form.organization as HTMLInputElement).value
     const email = (form.email as HTMLInputElement).value
+    const schoolDomain = (form.schoolDomain as HTMLInputElement).value
 
     if (!idFile) {
       setError("Please upload a valid ID")
@@ -72,6 +73,7 @@ export default function AdminApplicationForm() {
           organization,
           email,
           full_name: organization, // Use organization name as full_name for admins
+          school_domain: schoolDomain,
           document_urls: documentUrls
         })
       })
@@ -111,6 +113,10 @@ export default function AdminApplicationForm() {
             <div>
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" placeholder="admin@school.edu" required />
+            </div>
+            <div>
+              <Label htmlFor="schoolDomain">School Domain</Label>
+              <Input id="schoolDomain" type="text" placeholder="@gbox.adnu.edu.ph" required />
             </div>
             <div>
               <Label htmlFor="validId">Valid ID (required)</Label>

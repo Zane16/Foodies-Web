@@ -3,17 +3,19 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // GET - Fetch all customers across all organizations
 export async function GET() {
   try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    // Fetch all customers across all organizations
+    // Fetch all customers across all organizations (only approved/active)
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .select("id, full_name, email, phone, delivery_address, status, organization, created_at")
       .eq("role", "customer")
+      .eq("status", "approved")
       .order("organization", { ascending: true })
       .order("created_at", { ascending: false });
 

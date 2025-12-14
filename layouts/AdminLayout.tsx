@@ -174,7 +174,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     try {
       await supabase.auth.signOut()
-      router.push("/admin/signin")
+      router.push("/")
     } catch (error) {
       console.error("Sign out error:", error)
       alert("Failed to sign out. Please try again.")

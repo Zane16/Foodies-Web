@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server"
 import { getSupabaseAdmin } from "@/lib/supabase"
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const supabase = getSupabaseAdmin()
-    // Fetch all admins grouped by organization
+    // Fetch all admins grouped by organization (only approved admins)
     const { data: admins, error } = await supabase
       .from("profiles")
       .select("id, full_name, email, organization, status, created_at")
       .eq("role", "admin")
+      .eq("status", "approved")
       .order("organization", { ascending: true })
       .order("created_at", { ascending: true })
 

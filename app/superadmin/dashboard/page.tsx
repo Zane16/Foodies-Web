@@ -85,6 +85,7 @@ export default function Dashboard() {
         .from("applications")
         .select("*")
         .eq("role", "admin")
+        .eq("status", "pending")
         .order("created_at", { ascending: false })
 
       if (error) throw error
@@ -132,8 +133,8 @@ export default function Dashboard() {
         throw new Error(result.error || 'Failed to approve application')
       }
 
-      // Show the password to the SuperAdmin
-      alert(`Application approved!\n\nEmail: ${result.email}\nPassword: ${result.tempPassword}\n\nPlease save these credentials and share them with the admin.`)
+      // Show success message
+      alert(`Application approved!\n\nAn invitation email has been sent to ${email}.\nThe admin will receive instructions to set their password.`)
       setIsModalOpen(false)
       await fetchApplications()
     } catch (err: any) {

@@ -20,7 +20,7 @@ export default function ProtectedSuperAdminRoute({
 
       // 1️⃣ If no user logged in → redirect to sign-in
       if (!user) {
-        router.push("/superadmin/signin")
+        router.push("/SuperAdmin/signin")
         return
       }
 
@@ -33,7 +33,7 @@ export default function ProtectedSuperAdminRoute({
 
       if (error || !profile) {
         console.error("Profile fetch failed:", error)
-        router.push("/superadmin/signin")
+        router.push("/SuperAdmin/signin")
         return
       }
 

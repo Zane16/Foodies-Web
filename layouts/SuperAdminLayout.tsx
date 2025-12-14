@@ -116,7 +116,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
     try {
       await supabase.auth.signOut()
-      router.push("/superadmin/signin")
+      router.push("/")
     } catch (error) {
       console.error("Sign out error:", error)
       alert("Failed to sign out. Please try again.")

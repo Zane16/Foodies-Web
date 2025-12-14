@@ -95,7 +95,7 @@ export default function AdminSignInPage() {
           <div className="text-center text-sm">
             <span className="text-muted-foreground">Don&apos;t have an account? </span>
             <Link href="/admin/ApplicationForm" className="text-primary hover:underline">
-              Sign up
+              Apply
             </Link>
           </div>
           <div className="text-center">
