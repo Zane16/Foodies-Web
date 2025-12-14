@@ -53,7 +53,9 @@ export async function POST(req: Request) {
         const orgSlug = orgDomain.replace(/\./g, '-').toLowerCase();
         const orgName = orgDomain.split('.')[0].charAt(0).toUpperCase() + orgDomain.split('.')[0].slice(1);
 
-        const { data: newOrg } = await supabaseAdmin
+        console.log('Creating organization:', { name: orgName, slug: orgSlug, email_domains: [orgDomain] });
+
+        const { data: newOrg, error: orgError } = await supabaseAdmin
           .from('organizations')
           .insert({
             name: orgName,
@@ -64,7 +66,12 @@ export async function POST(req: Request) {
           .select('id')
           .single();
 
-        organizationId = newOrg?.id || null;
+        if (orgError) {
+          console.error('Failed to create organization:', orgError);
+        } else {
+          console.log('Organization created successfully:', newOrg);
+          organizationId = newOrg?.id || null;
+        }
       }
     }
 
