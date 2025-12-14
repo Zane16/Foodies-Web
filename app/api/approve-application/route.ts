@@ -23,22 +23,65 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Application not found" }, { status: 404 });
     }
 
-    // Step 2: Invite user via Supabase (sends automatic email)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const redirectUrl = `${appUrl}/auth/callback`;
+    // Step 2: Determine redirect URL based on role
+    let redirectUrl;
+    if (application.role === 'admin') {
+      // Admins use the web dashboard
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      redirectUrl = `${appUrl}/auth/callback`;
+    } else {
+      // Vendors and deliverers use the mobile app
+      redirectUrl = 'foodies://auth/set-password';
+    }
+
+    // Step 3: Handle organization for admin applications (before invite)
+    let organizationId = null;
+    if (application.role === 'admin' && application.organization) {
+      const orgDomain = application.organization;
+
+      // Check if organization exists with this domain
+      const { data: existingOrg } = await supabaseAdmin
+        .from('organizations')
+        .select('id')
+        .contains('email_domains', [orgDomain])
+        .single();
+
+      organizationId = existingOrg?.id;
+
+      // Create organization if it doesn't exist
+      if (!existingOrg) {
+        const orgSlug = orgDomain.replace(/\./g, '-').toLowerCase();
+        const orgName = orgDomain.split('.')[0].charAt(0).toUpperCase() + orgDomain.split('.')[0].slice(1);
+
+        const { data: newOrg } = await supabaseAdmin
+          .from('organizations')
+          .insert({
+            name: orgName,
+            slug: orgSlug,
+            email_domains: [orgDomain],
+            status: 'active'
+          })
+          .select('id')
+          .single();
+
+        organizationId = newOrg?.id || null;
+      }
+    }
 
     console.log('=== EMAIL DEBUG ===');
-    console.log('NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
-    console.log('Final appUrl:', appUrl);
+    console.log('Application Role:', application.role);
+    console.log('Organization ID:', organizationId);
     console.log('Redirect URL:', redirectUrl);
     console.log('==================');
 
+    // Step 4: Invite user via Supabase (sends automatic email)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       application.email,
       {
         data: {
           full_name: application.full_name,
           organization: application.organization || "global",
+          organization_id: organizationId,
           role: application.role
         },
         redirectTo: redirectUrl
@@ -52,7 +95,7 @@ export async function POST(req: Request) {
       }, { status: 500 });
     }
 
-    // Step 3: Update application status (profile will be created when user sets password)
+    // Step 5: Update application status (profile will be created when user sets password)
     await supabaseAdmin
       .from("applications")
       .update({
