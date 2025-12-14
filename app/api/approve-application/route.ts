@@ -23,6 +23,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Application not found" }, { status: 404 });
     }
 
+    console.log('Application data:', {
+      id: application.id,
+      email: application.email,
+      role: application.role,
+      organization: application.organization
+    });
+
     // Step 2: Determine redirect URL based on role
     let redirectUrl;
     if (application.role === 'admin') {
@@ -39,14 +46,21 @@ export async function POST(req: Request) {
     if (application.role === 'admin' && application.organization) {
       const orgDomain = application.organization;
 
+      console.log('Admin application - checking organization for domain:', orgDomain);
+
       // Check if organization exists with this domain
-      const { data: existingOrg } = await supabaseAdmin
+      const { data: existingOrg, error: findError } = await supabaseAdmin
         .from('organizations')
         .select('id')
         .contains('email_domains', [orgDomain])
-        .single();
+        .maybeSingle();
+
+      if (findError) {
+        console.error('Error checking for existing organization:', findError);
+      }
 
       organizationId = existingOrg?.id;
+      console.log('Existing organization found:', existingOrg ? 'Yes' : 'No');
 
       // Create organization if it doesn't exist
       if (!existingOrg) {
