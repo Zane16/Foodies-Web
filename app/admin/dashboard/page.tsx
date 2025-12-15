@@ -114,10 +114,18 @@ export default function AdminDashboard() {
   // Approve application
   const handleApprove = async (applicationId: string) => {
     setLoadingId(applicationId)
+
+    // Get current admin's ID
+    const { supabase } = await import("@/lib/supabase")
+    const { data: { user } } = await supabase.auth.getUser()
+
     const res = await fetch("/api/approve-application", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ applicationId }),
+      body: JSON.stringify({
+        applicationId,
+        adminId: user?.id
+      }),
     })
     const data = await res.json()
     setLoadingId(null)
@@ -127,15 +135,14 @@ export default function AdminDashboard() {
       setApplications((prev) => prev.filter((app) => app.id !== applicationId))
       setIsModalOpen(false)
 
-      // If a new user was created with a temp password, show it
-      if (data.tempPassword && selectedApp) {
-        setPasswordInfo({
-          email: selectedApp.email,
-          password: data.tempPassword,
-          role: data.role || selectedApp.role || 'user'
-        })
-        setIsPasswordModalOpen(true)
+      // Show success message with optional magic link fallback
+      let message = `Application approved!\n\nAn invitation email has been sent to ${data.user.email}.`
+
+      if (data.magicLink) {
+        message += `\n\n⚠️ EMAIL BACKUP:\nIf the email doesn't arrive within 5 minutes, copy this invite link and send it manually:\n\n${data.magicLink}\n\nThis link expires in 24 hours.`
       }
+
+      alert(message)
     } else {
       alert(data.error || "Error approving application")
     }

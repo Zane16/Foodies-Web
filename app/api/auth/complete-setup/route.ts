@@ -34,11 +34,13 @@ export async function POST(request: Request) {
       .single()
 
     if (existingProfile) {
-      // Profile exists, just update status to approved
+      // Profile exists (vendor/deliverer flow), just update status to approved
       await supabaseAdmin
         .from('profiles')
         .update({ status: 'approved' })
         .eq('id', user.id)
+
+      // Note: Vendor record already created in approve-application, don't create again
 
       return NextResponse.json({
         success: true,
@@ -58,6 +60,7 @@ export async function POST(request: Request) {
         full_name: metadata.full_name || '',
         role: userRole,
         organization: metadata.organization || 'global',
+        organization_id: metadata.organization_id || null,
         status: 'approved'
       })
       .select()
@@ -71,30 +74,21 @@ export async function POST(request: Request) {
       )
     }
 
-    // If vendor, create vendor record
-    if (userRole === 'vendor') {
-      const { data: application } = await supabaseAdmin
-        .from('applications')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('role', 'vendor')
-        .single()
+    // If vendor, create vendor record using metadata
+    if (userRole === 'vendor' && metadata.business_name) {
+      const { error: vendorError } = await supabaseAdmin
+        .from('vendors')
+        .insert({
+          id: user.id,
+          business_name: metadata.business_name,
+          business_address: metadata.business_address,
+          menu_summary: metadata.menu_summary,
+          is_active: true
+        })
 
-      if (application) {
-        const { error: vendorError } = await supabaseAdmin
-          .from('vendors')
-          .insert({
-            id: user.id,
-            business_name: application.business_name || metadata.full_name,
-            business_address: application.business_address,
-            menu_summary: application.menu_summary,
-            is_active: true
-          })
-
-        if (vendorError) {
-          console.error('Vendor creation error:', vendorError)
-          // Continue anyway - can be fixed later
-        }
+      if (vendorError) {
+        console.error('Vendor creation error:', vendorError)
+        // Continue anyway - can be fixed later
       }
     }
 
