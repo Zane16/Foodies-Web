@@ -135,14 +135,24 @@ export default function AdminDashboard() {
       setApplications((prev) => prev.filter((app) => app.id !== applicationId))
       setIsModalOpen(false)
 
-      // Show success message with optional magic link fallback
-      let message = `Application approved!\n\nAn invitation email has been sent to ${data.user.email}.`
+      // Show credentials if available (new password-based flow)
+      if (data.credentials && data.credentials.password) {
+        setPasswordInfo({
+          email: data.credentials.email,
+          password: data.credentials.password,
+          role: data.user.role,
+        })
+        setIsPasswordModalOpen(true)
+      } else {
+        // Fallback for old magic link flow
+        let message = `Application approved!\n\nAn invitation email has been sent to ${data.user.email}.`
 
-      if (data.magicLink) {
-        message += `\n\n⚠️ EMAIL BACKUP:\nIf the email doesn't arrive within 5 minutes, copy this invite link and send it manually:\n\n${data.magicLink}\n\nThis link expires in 24 hours.`
+        if (data.magicLink) {
+          message += `\n\n⚠️ EMAIL BACKUP:\nIf the email doesn't arrive within 5 minutes, copy this invite link and send it manually:\n\n${data.magicLink}\n\nThis link expires in 24 hours.`
+        }
+
+        alert(message)
       }
-
-      alert(message)
     } else {
       alert(data.error || "Error approving application")
     }

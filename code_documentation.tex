@@ -1,0 +1,196 @@
+\documentclass[12pt,a4paper]{book}
+
+\usepackage[utf-8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    showstringspaces=false,
+    tabsize=2,
+    frame=single,
+}
+
+\title{\textbf{Foodies Web Application} \\ Code Source}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\chapter{Code Source}
+
+\section{Core Library}
+
+\noindent\textbf{File Path: /lib/supabase.ts}
+\noindent\textbf{Title: Supabase Client Configuration}
+\lstinputlisting{Application/lib/supabase.ts}
+
+\noindent\textbf{File Path: /lib/utils.ts}
+\noindent\textbf{Title: Utility Functions}
+\lstinputlisting{Application/lib/utils.ts}
+
+\section{Layouts}
+
+\noindent\textbf{File Path: /app/layout.tsx}
+\noindent\textbf{Title: Root Layout}
+\lstinputlisting{Application/app/layout.tsx}
+
+\noindent\textbf{File Path: /layouts/AdminLayout.tsx}
+\noindent\textbf{Title: Admin Layout}
+\lstinputlisting{Application/layouts/AdminLayout.tsx}
+
+\noindent\textbf{File Path: /layouts/SuperAdminLayout.tsx}
+\noindent\textbf{Title: SuperAdmin Layout}
+\lstinputlisting{Application/layouts/SuperAdminLayout.tsx}
+
+\section{Admin Module}
+
+\noindent\textbf{File Path: /app/admin/dashboard/page.tsx}
+\noindent\textbf{Title: Admin Dashboard}
+\lstinputlisting{Application/app/admin/dashboard/page.tsx}
+
+\noindent\textbf{File Path: /app/admin/signin/page.tsx}
+\noindent\textbf{Title: Admin Sign In}
+\lstinputlisting{Application/app/admin/signin/page.tsx}
+
+\noindent\textbf{File Path: /app/admin/ApplicationForm/page.tsx}
+\noindent\textbf{Title: Application Form}
+\lstinputlisting{Application/app/admin/ApplicationForm/page.tsx}
+
+\section{Vendor Module}
+
+\noindent\textbf{File Path: /app/vendor/dashboard/page.tsx}
+\noindent\textbf{Title: Vendor Dashboard}
+\lstinputlisting{Application/app/vendor/dashboard/page.tsx}
+
+\noindent\textbf{File Path: /app/vendor/signin/page.tsx}
+\noindent\textbf{Title: Vendor Sign In}
+\lstinputlisting{Application/app/vendor/signin/page.tsx}
+
+\noindent\textbf{File Path: /app/vendor/signup/page.tsx}
+\noindent\textbf{Title: Vendor Sign Up}
+\lstinputlisting{Application/app/vendor/signup/page.tsx}
+
+\section{Rider Module}
+
+\noindent\textbf{File Path: /app/rider/dashboard/page.tsx}
+\noindent\textbf{Title: Rider Dashboard}
+\lstinputlisting{Application/app/rider/dashboard/page.tsx}
+
+\noindent\textbf{File Path: /app/rider/signin/page.tsx}
+\noindent\textbf{Title: Rider Sign In}
+\lstinputlisting{Application/app/rider/signin/page.tsx}
+
+\noindent\textbf{File Path: /app/rider/signup/page.tsx}
+\noindent\textbf{Title: Rider Sign Up}
+\lstinputlisting{Application/app/rider/signup/page.tsx}
+
+\section{SuperAdmin Module}
+
+\noindent\textbf{File Path: /app/superadmin/dashboard/page.tsx}
+\noindent\textbf{Title: SuperAdmin Dashboard}
+\lstinputlisting{Application/app/superadmin/dashboard/page.tsx}
+
+\noindent\textbf{File Path: /app/superadmin/signin/page.tsx}
+\noindent\textbf{Title: SuperAdmin Sign In}
+\lstinputlisting{Application/app/superadmin/signin/page.tsx}
+
+\section{API Endpoints}
+
+\noindent\textbf{File Path: /app/api/applications/route.ts}
+\noindent\textbf{Title: Applications Endpoint}
+\lstinputlisting{Application/app/api/applications/route.ts}
+
+\noindent\textbf{File Path: /app/api/approve-application/route.ts}
+\noindent\textbf{Title: Approve Application}
+\lstinputlisting{Application/app/api/approve-application/route.ts}
+
+\noindent\textbf{File Path: /app/api/decline-application/route.ts}
+\noindent\textbf{Title: Decline Application}
+\lstinputlisting{Application/app/api/decline-application/route.ts}
+
+\noindent\textbf{File Path: /app/api/vendors/route.ts}
+\noindent\textbf{Title: Vendors Endpoint}
+\lstinputlisting{Application/app/api/vendors/route.ts}
+
+\noindent\textbf{File Path: /app/api/deliverers/route.ts}
+\noindent\textbf{Title: Deliverers Endpoint}
+\lstinputlisting{Application/app/api/deliverers/route.ts}
+
+\noindent\textbf{File Path: /app/api/schools/route.ts}
+\noindent\textbf{Title: Schools Endpoint}
+\lstinputlisting{Application/app/api/schools/route.ts}
+
+\noindent\textbf{File Path: /app/api/upload-image/route.ts}
+\noindent\textbf{Title: Image Upload}
+\lstinputlisting{Application/app/api/upload-image/route.ts}
+
+\noindent\textbf{File Path: /app/api/submit-admin-application/route.ts}
+\noindent\textbf{Title: Submit Admin Application}
+\lstinputlisting{Application/app/api/submit-admin-application/route.ts}
+
+\noindent\textbf{File Path: /app/api/approve-admin-application/route.ts}
+\noindent\textbf{Title: Approve Admin Application}
+\lstinputlisting{Application/app/api/approve-admin-application/route.ts}
+
+\noindent\textbf{File Path: /app/api/reset-admin-password/route.ts}
+\noindent\textbf{Title: Reset Admin Password}
+\lstinputlisting{Application/app/api/reset-admin-password/route.ts}
+
+\section{Authentication}
+
+\noindent\textbf{File Path: /app/auth/callback/route.ts}
+\noindent\textbf{Title: OAuth Callback Handler}
+\lstinputlisting{Application/app/auth/callback/route.ts}
+
+\noindent\textbf{File Path: /app/auth/set-password/page.tsx}
+\noindent\textbf{Title: Set Password}
+\lstinputlisting{Application/app/auth/set-password/page.tsx}
+
+\noindent\textbf{File Path: /app/auth/accept-invite/page.tsx}
+\noindent\textbf{Title: Accept Invite}
+\lstinputlisting{Application/app/auth/accept-invite/page.tsx}
+
+\section{UI Components}
+
+\noindent\textbf{File Path: /components/ui/form.tsx}
+\noindent\textbf{Title: Form Component}
+\lstinputlisting{Application/components/ui/form.tsx}
+
+\noindent\textbf{File Path: /components/ui/button.tsx}
+\noindent\textbf{Title: Button Component}
+\lstinputlisting{Application/components/ui/button.tsx}
+
+\noindent\textbf{File Path: /components/ui/input.tsx}
+\noindent\textbf{Title: Input Component}
+\lstinputlisting{Application/components/ui/input.tsx}
+
+\noindent\textbf{File Path: /components/ui/dialog.tsx}
+\noindent\textbf{Title: Dialog Component}
+\lstinputlisting{Application/components/ui/dialog.tsx}
+
+\noindent\textbf{File Path: /components/ui/table.tsx}
+\noindent\textbf{Title: Table Component}
+\lstinputlisting{Application/components/ui/table.tsx}
+
+\section{Styling}
+
+\noindent\textbf{File Path: /app/globals.css}
+\noindent\textbf{Title: Global Styles}
+\lstinputlisting{Application/app/globals.css}
+
+\noindent\textbf{File Path: /components/theme-provider.tsx}
+\noindent\textbf{Title: Theme Provider}
+\lstinputlisting{Application/components/theme-provider.tsx}
+
+\section{Database}
+
+\noindent\textbf{File Path: /Schema.sql}
+\noindent\textbf{Title: Database Schema}
+\lstinputlisting{Application/Schema.sql}
+
+\end{document}
