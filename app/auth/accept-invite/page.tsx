@@ -1,47 +1,33 @@
-// /app/api/auth/accept-invite/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+"use client"
 
-export async function POST(req: NextRequest) {
-  try {
-    const { token } = await req.json()
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 400 })
-    }
+export default function AcceptInvitePage() {
+  const router = useRouter()
 
-    // Use service role key to perform admin actions
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    // Verify invite token by looking up user by token
-    // Supabase doesn't have direct "accept invite by token" API,
-    // usually we track token in a table or let magic link do it.
-    // For demo, we assume token maps to user's email in `invite_tokens` table
-
-    const { data: invite, error: inviteError } = await supabaseAdmin
-      .from('invite_tokens')
-      .select('*')
-      .eq('token', token)
-      .single()
-
-    if (inviteError || !invite) {
-      return NextResponse.json({ error: 'Invalid or expired invitation' }, { status: 400 })
-    }
-
-    // Optionally, mark token as used
-    await supabaseAdmin
-      .from('invite_tokens')
-      .update({ used: true })
-      .eq('token', token)
-
-    // Everything ok, return success
-    return NextResponse.json({ success: true, email: invite.email })
-
-  } catch (err: any) {
-    console.error('Accept invite error:', err)
-    return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 })
-  }
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Processing Invitation</CardTitle>
+          <CardDescription>
+            Your invitation is being processed
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-gray-600">
+            If you have an invitation link, please use it to accept your invitation.
+          </p>
+          <Button
+            onClick={() => router.push('/admin/signin')}
+            className="w-full"
+          >
+            Go to Sign In
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
