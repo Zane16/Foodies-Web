@@ -36,16 +36,9 @@ export default function SetPasswordPage() {
       console.log('Session found:', session.user.email)
       setEmail(session.user.email || '')
 
-      // Get user role from profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single()
-
-      if (profile) {
-        setRole(profile.role)
-      }
+      // Get user role from JWT metadata
+      const userRole = (session.user.user_metadata?.role as string) || 'admin'
+      setRole(userRole)
     }
 
     checkSession()
