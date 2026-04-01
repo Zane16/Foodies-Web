@@ -20,9 +20,24 @@ export default function SetPasswordPage() {
   useEffect(() => {
     const checkSession = async () => {
       const supabase = createSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
+
+      // Wait for session with retries, as magic link session may take time to persist
+      let retries = 0
+      let session = null
+
+      while (retries < 5 && !session) {
+        const { data: { session: sess } } = await supabase.auth.getSession()
+        session = sess
+
+        if (!session) {
+          retries++
+          // Wait 500ms before retrying
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      }
 
       if (!session) {
+        console.error('No session found after retries')
         router.push('/admin/signin')
         return
       }
