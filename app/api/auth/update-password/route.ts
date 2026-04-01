@@ -35,6 +35,7 @@ export async function POST(req: Request) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false },
       global: { headers: { Authorization: authHeader } }
     });
 
@@ -42,7 +43,8 @@ export async function POST(req: Request) {
     const { data: { user }, error: userError } = await userClient.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+      console.error("User authentication error:", userError);
+      return NextResponse.json({ error: "Invalid or expired session" }, { status: 401 });
     }
 
     // Use admin client to update the password
