@@ -44,24 +44,22 @@ export default function SuperAdminSignInPage() {
       if (profileError) throw profileError
       
       // Use JWT metadata role as fallback if profile doesn't exist yet
-      const userRole = profile?.role || (user.user_metadata?.role as string) || undefined
+      const userRole = profile?.role || (user.user_metadata?.role as string)
+      
+      console.log("SuperAdmin login debug:", { userId: user.id, profile, userRole, metadata: user.user_metadata?.role })
   
       // 3️⃣ Redirect based on role
-      switch (userRole) {
-        case "superadmin":
-          router.push("/superadmin/dashboard")
-          break
-        case "admin":
-          router.push("/admin/dashboard")
-          break
-        case "vendor":
-          router.push("/vendor/dashboard")
-          break
-        case "deliverer":
-          router.push("/deliverer/dashboard")
-          break
-        default:
-          throw new Error("Unknown role or unauthorized access")
+      if (userRole === "superadmin") {
+        router.push("/superadmin/dashboard")
+      } else if (userRole === "admin") {
+        router.push("/admin/dashboard")
+      } else if (userRole === "vendor") {
+        router.push("/vendor/dashboard")
+      } else if (userRole === "deliverer") {
+        router.push("/deliverer/dashboard")
+      } else {
+        console.error("Invalid role for signin:", { userRole, profile, metadata: user.user_metadata })
+        throw new Error(`Unknown role or unauthorized access. Role: ${userRole || "undefined"}`)
       }
     } catch (err: any) {
       console.error(err)

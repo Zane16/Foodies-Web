@@ -45,18 +45,19 @@ export default function AdminSignInPage() {
       if (profileError) throw profileError
       
       // Use JWT metadata role as fallback if profile doesn't exist yet
-      const userRole = profile?.role || (user.user_metadata?.role as string) || undefined
+      const userRole = profile?.role || (user.user_metadata?.role as string)
+      
+      console.log("Login debug:", { userId: user.id, profile, userRole, metadata: user.user_metadata?.role })
 
       // 3️⃣ Role-based redirect
-      switch (userRole) {
-        case "superadmin":
-          router.push("/superadmin/dashboard")
-          break
-        case "admin":
-          router.push("/admin/dashboard")
-          break
-        default:
-          throw new Error("You are not authorized to access this area.")
+      if (userRole === "superadmin") {
+        router.push("/superadmin/dashboard")
+      } else if (userRole === "admin") {
+        router.push("/admin/dashboard")
+      } else {
+        // Log what we got for debugging
+        console.error("Invalid role for admin signin:", { userRole, profile, metadata: user.user_metadata })
+        throw new Error(`You are not authorized to access this area. Role: ${userRole || "undefined"}. Contact your administrator.`)
       }
     } catch (err: any) {
       console.error(err)
