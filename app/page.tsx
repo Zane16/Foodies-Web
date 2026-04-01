@@ -14,7 +14,7 @@ export default function HomePage() {
           </div>
 
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-balance mb-8 leading-[0.9]">
-            Welcome to <span className="bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">Foodies</span>
+            Welcome to <span className="bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 bg-clip-text text-transparent">Foodies</span>
           </h1>
 
           <p className="text-xl md:text-2xl lg:text-3xl text-muted-foreground mb-12 text-pretty max-w-4xl mx-auto leading-relaxed">
