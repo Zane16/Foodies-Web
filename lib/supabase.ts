@@ -6,9 +6,15 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Helper function to create a new client instance for client components
+// Singleton client instance for client components
+let clientInstance: ReturnType<typeof createClient> | null = null
+
+// Helper function to get or create a client instance (singleton pattern)
 export function createSupabaseClient() {
-  return createClient(supabaseUrl, supabaseAnonKey)
+  if (!clientInstance) {
+    clientInstance = createClient(supabaseUrl, supabaseAnonKey)
+  }
+  return clientInstance
 }
 
 // Helper function for API routes to create admin client at runtime

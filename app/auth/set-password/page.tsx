@@ -70,16 +70,29 @@ export default function SetPasswordPage() {
     try {
       const supabase = createSupabaseClient()
 
-      // Update password using Supabase auth
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password
-      })
+      // Get the session to retrieve access token
+      const { data: { session } } = await supabase.auth.getSession()
 
-      if (updateError) {
-        throw updateError
+      if (!session) {
+        throw new Error('No active session found')
       }
 
-      // Get user session
+      // Update password using the API endpoint with admin client
+      const response = await fetch('/api/auth/update-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ password })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update password')
+      }
+
+      // Get user session again to refresh
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         throw new Error('No user session found')
