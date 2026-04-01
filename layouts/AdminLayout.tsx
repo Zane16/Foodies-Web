@@ -37,7 +37,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             .from("profiles")
             .select("organization, full_name, profile_picture_url, header_image_url")
             .eq("id", user.id)
-            .single()
+            .maybeSingle()
 
           if (profile?.organization) {
             setOrganizationName(profile.organization)
@@ -67,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           .from("profiles")
           .select("organization")
           .eq("id", user.id)
-          .single()
+          .maybeSingle()
 
         if (!profile?.organization) return
 

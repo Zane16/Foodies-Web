@@ -29,7 +29,7 @@ export default function ProtectedSuperAdminRoute({
         .from("profiles")
         .select("role")
         .eq("id", user.id)
-        .single()
+        .maybeSingle()
 
       if (error || !profile) {
         console.error("Profile fetch failed:", error)

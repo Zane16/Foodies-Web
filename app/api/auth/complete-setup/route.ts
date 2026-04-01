@@ -27,11 +27,11 @@ export async function POST(request: Request) {
     }
 
     // Check if profile already exists
-    const { data: existingProfile } = await supabaseAdmin
+    const { data: existingProfile, error: profileCheckError } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     if (existingProfile) {
       // Profile exists (vendor/deliverer flow), just update status to approved

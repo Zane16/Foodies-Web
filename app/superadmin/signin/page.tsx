@@ -39,12 +39,15 @@ export default function SuperAdminSignInPage() {
         .from("profiles")
         .select("role")
         .eq("id", user.id)
-        .single()
+        .maybeSingle()
   
       if (profileError) throw profileError
+      
+      // Use JWT metadata role as fallback if profile doesn't exist yet
+      const userRole = profile?.role || (user.user_metadata?.role as string) || undefined
   
       // 3️⃣ Redirect based on role
-      switch (profile.role) {
+      switch (userRole) {
         case "superadmin":
           router.push("/superadmin/dashboard")
           break

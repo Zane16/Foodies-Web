@@ -132,7 +132,34 @@ export async function POST(request: Request) {
     }
 
     // ─────────────────────────────────────────────
-    // Step 4: Update application status
+    // Step 4: Create profile in profiles table
+    // ─────────────────────────────────────────────
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .insert({
+        id: authData.user.id,
+        email: application.email,
+        full_name: application.full_name,
+        role: "admin",
+        organization: orgName,
+        organization_id: organizationId,
+        status: "approved",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+    if (profileError) {
+      console.error("Profile creation failed:", profileError);
+      return NextResponse.json(
+        { error: "Failed to create admin profile: " + profileError?.message },
+        { status: 500 }
+      );
+    }
+
+    console.log("Admin profile created for user:", authData.user.id);
+
+    // ─────────────────────────────────────────────
+    // Step 5: Update application status
     // ─────────────────────────────────────────────
     await supabaseAdmin
       .from("applications")
