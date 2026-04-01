@@ -21,27 +21,19 @@ export default function SetPasswordPage() {
     const checkSession = async () => {
       const supabase = createSupabaseClient()
 
-      // Wait for session with retries, as magic link session may take time to persist
-      let retries = 0
-      let session = null
+      // Give the browser time to process and store the session from the hash
+      await new Promise(resolve => setTimeout(resolve, 300))
 
-      while (retries < 5 && !session) {
-        const { data: { session: sess } } = await supabase.auth.getSession()
-        session = sess
+      // Get the session from browser storage
+      const { data: { session }, error } = await supabase.auth.getSession()
 
-        if (!session) {
-          retries++
-          // Wait 500ms before retrying
-          await new Promise(resolve => setTimeout(resolve, 500))
-        }
-      }
-
-      if (!session) {
-        console.error('No session found after retries')
+      if (error || !session) {
+        console.error('No session found:', error)
         router.push('/admin/signin')
         return
       }
 
+      console.log('Session found:', session.user.email)
       setEmail(session.user.email || '')
 
       // Get user role from profile

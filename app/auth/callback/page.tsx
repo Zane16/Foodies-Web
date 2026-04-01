@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseClient } from '@/lib/supabase'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function AuthCallbackPage() {
   const router = useRouter()
@@ -15,39 +16,46 @@ export default function AuthCallbackPage() {
       console.log('Hash:', window.location.hash)
       console.log('URL:', window.location.href)
 
-      // Use onAuthStateChange to wait for Supabase to process the magic link
-      // This ensures the session is properly set before redirecting
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          console.log('Auth state changed:', event, 'Session:', !!session)
+      // Give Supabase time to process the hash fragment automatically
+      await new Promise(resolve => setTimeout(resolve, 500))
 
-          if (event === 'SIGNED_IN' && session) {
-            console.log('User signed in, redirecting to set-password')
-            subscription?.unsubscribe()
-            // Use window.location.href to preserve the hash fragment
-            window.location.href = '/auth/set-password'
-          } else if (event === 'SIGNED_OUT' || !session) {
-            // Give Supabase time to process the hash before checking session
-            setTimeout(() => {
-              supabase.auth.getSession().then(({ data: { session } }) => {
-                if (session) {
-                  console.log('Session found via getSession, redirecting')
-                  subscription?.unsubscribe()
-                  window.location.href = '/auth/set-password'
-                } else {
-                  console.log('No session found, showing error')
-                  subscription?.unsubscribe()
-                  window.location.href = '/auth/error'
-                }
-              })
-            }, 1000)
-          }
-        }
-      )
+      // Check if session was established
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+      if (sessionError) {
+        console.error('Session error:', sessionError)
+        router.push('/auth/error')
+        return
+      }
+
+      if (session) {
+        console.log('Session established, redirecting to set-password')
+        // Redirect to set-password - session should be available in browser storage
+        router.push('/auth/set-password')
+      } else {
+        console.log('No session found')
+        router.push('/auth/error')
+      }
     }
 
     handleCallback()
   }, [router])
+
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Processing your invitation</CardTitle>
+          <CardDescription>Please wait while we verify your magic link...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
 
   return (
     <div className="min-h-screen flex items-center justify-center">
